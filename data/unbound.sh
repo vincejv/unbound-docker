@@ -357,6 +357,14 @@ server:
     # actual resolution answer ends up in the cache later on.
     serve-expired: yes
 
+    # UDP queries that have waited in the socket buffer for a long time can be
+    # dropped. The time is set in seconds, 3 could be a good value to ignore old
+    # queries that likely the client does not need a reply for any more. This 
+    # could happen if the host has not been able to service the queries for a 
+    # while, i.e. Unbound is not running, and then is enabled again. It uses 
+    # timestamp socket options.
+    sock-queue-timeout: 3
+
     # Open dedicated listening sockets for incoming queries for each thread and
     # try to set the SO_REUSEPORT socket option on each socket. May distribute
     # incoming queries to threads more evenly.
