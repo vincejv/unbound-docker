@@ -60,6 +60,18 @@ server:
     # Set the working directory for the program.
     directory: "/opt/unbound/etc/unbound"
 
+    # If enabled, Unbound will respond with Extended DNS Error codes (RFC 8914).
+    # These EDEs attach informative error messages to a response for various
+    # errors.
+    # When the val-log-level: option is also set to 2, responses with Extended
+    # DNS Errors concerning DNSSEC failures that are not served from cache, will
+    # also contain a descriptive text message about the reason for the failure.
+    ede: yes
+    # If enabled, Unbound will attach an Extended DNS Error (RFC 8914)
+    # Code 3 - Stale Answer as EDNS0 option to the expired response.
+    # This will not attach the EDE code without setting ede: yes as well.
+    ede-serve-expired: yes
+
     # RFC 6891. Number  of bytes size to advertise as the EDNS reassembly buffer
     # size. This is the value put into  datagrams over UDP towards peers.
     # The actual buffer size is determined by msg-buffer-size (both for TCP and
@@ -171,6 +183,12 @@ server:
     # Harden against algorithm downgrade when multiple algorithms are
     # advertised in the DS record.
     harden-algo-downgrade: yes
+
+    # Harden against unknown records in the authority section and additional
+    # section. If no, such records are copied from the upstream and presented
+    # to the client together with the answer. If yes, it could hamper future
+    # protocol developments that want to add records.
+    harden-unknown-additional: yes
 
     # RFC 8020. returns nxdomain to queries for a name below another name that
     # is already known to be nxdomain.
