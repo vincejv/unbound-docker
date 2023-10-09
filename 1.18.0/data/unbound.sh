@@ -73,7 +73,7 @@ server:
 
     # Listen to for queries from clients and answer from this network interface
     # and port.
-    interface: 0.0.0.0@53
+    interface: 127.0.0.1@5335
 
     # Rotates RRSet order in response (the pseudo-random number is taken from
     # the query ID, for speed and thread safety).
@@ -361,6 +361,8 @@ server:
 
 remote-control:
     control-enable: no
+    
+include: "/opt/unbound/etc/unbound/unbound.conf.d/*.conf"
 EOT
 fi
 
@@ -370,5 +372,7 @@ cp -a /dev/random /dev/urandom /dev/null /opt/unbound/etc/unbound/dev/
 mkdir -p -m 700 /opt/unbound/etc/unbound/var && \
 chown _unbound:_unbound /opt/unbound/etc/unbound/var && \
 /opt/unbound/sbin/unbound-anchor -a /opt/unbound/etc/unbound/var/root.key
+
+mkdir -p /opt/unbound/etc/unbound/unbound.conf.d
 
 exec /opt/unbound/sbin/unbound -d -c /opt/unbound/etc/unbound/unbound.conf
