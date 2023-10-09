@@ -108,7 +108,9 @@ LABEL maintainer="Vince Jerald Villamora"
 
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
-    DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
+    DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver." \
+    ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
+    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
 WORKDIR /tmp/src
 
@@ -125,6 +127,10 @@ RUN set -x && \
       libprotobuf-c1 && \
     groupadd _unbound && \
     useradd -g _unbound -s /dev/null -d /etc _unbound && \
+    curl -sSL $ROOT_HINTS_URL -o root.hints && \
+    ROOT_HINTS_MD5_HASHVAL=$(curl -sSL $ROOT_HINTS_MD5_URL) && \
+    echo "${ROOT_HINTS_MD5_HASHVAL} *root.hints" | md5sum -c - && \
+    mv root.hints /opt/unbound/etc/unbound/root.hints && \
     apt-get purge -y --auto-remove \
       $build_deps && \
     rm -rf \
