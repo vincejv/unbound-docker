@@ -12,7 +12,7 @@ on:
 
 jobs:
 
-  docker-arm64:
+  arm64:
     runs-on: ubuntu-latest
     steps:
       -
@@ -35,7 +35,7 @@ jobs:
           platforms: linux/arm64
           tags: vincejv/unbound:latest
 
-  docker-amd64:
+  amd64:
     runs-on: ubuntu-latest
     steps:
       -

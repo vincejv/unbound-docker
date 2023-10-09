@@ -55,7 +55,9 @@ LABEL maintainer="Vince Jerald Villamora"
 ENV NAME=unbound \
     UNBOUND_VERSION=1.18.0 \
     UNBOUND_SHA256=3da95490a85cff6420f26fae0b84a49f5112df1bf1b7fc34f8724f02082cb712 \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.18.0.tar.gz
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.18.0.tar.gz \
+    ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
+    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
 WORKDIR /tmp/src
 
@@ -94,6 +96,10 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev make
         --enable-subnet && \
     make install && \
     mv /opt/unbound/etc/unbound/unbound.conf /opt/unbound/etc/unbound/unbound.conf.example && \
+    curl -sSL $ROOT_HINTS_URL -o root.hints && \
+    ROOT_HINTS_MD5_HASHVAL=$(curl -sSL $ROOT_HINTS_MD5_URL) && \
+    echo "${ROOT_HINTS_MD5_HASHVAL} *root.hints" | md5sum -c - && \
+    mv root.hints /opt/unbound/etc/unbound/root.hints && \
     apt-get purge -y --auto-remove \
       $build_deps && \
     rm -rf \
@@ -108,9 +114,7 @@ LABEL maintainer="Vince Jerald Villamora"
 
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
-    DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver." \
-    ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
-    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
+    DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
 WORKDIR /tmp/src
 
@@ -127,10 +131,6 @@ RUN set -x && \
       libprotobuf-c1 && \
     groupadd _unbound && \
     useradd -g _unbound -s /dev/null -d /etc _unbound && \
-    curl -sSL $ROOT_HINTS_URL -o root.hints && \
-    ROOT_HINTS_MD5_HASHVAL=$(curl -sSL $ROOT_HINTS_MD5_URL) && \
-    echo "${ROOT_HINTS_MD5_HASHVAL} *root.hints" | md5sum -c - && \
-    mv root.hints /opt/unbound/etc/unbound/root.hints && \
     apt-get purge -y --auto-remove \
       $build_deps && \
     rm -rf \
