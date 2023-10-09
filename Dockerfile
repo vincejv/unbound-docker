@@ -142,7 +142,7 @@ WORKDIR /opt/unbound/
 ENV PATH /opt/unbound/sbin:"$PATH"
 
 LABEL org.opencontainers.image.version=${UNBOUND_VERSION} \
-      org.opencontainers.image.title="mvance/unbound" \
+      org.opencontainers.image.title="vincejv/unbound" \
       org.opencontainers.image.description="a validating, recursive, and caching DNS resolver" \
       org.opencontainers.image.url="https://github.com/vincejv/unbound-docker" \
       org.opencontainers.image.vendor="Vince Jerald Villamora" \
