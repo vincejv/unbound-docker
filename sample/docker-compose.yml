@@ -1,0 +1,20 @@
+version: '3'
+services:
+  unbound:
+    container_name: unbound
+    image: vincejv/unbound:latest
+    network_mode: host
+    volumes:
+      - type: bind
+        read_only: true
+        source: ./conf
+        target: /opt/unbound/etc/unbound/unbound.conf.d
+      - type: bind
+        read_only: true
+        source: ./forward-records.conf
+        target: /opt/unbound/etc/unbound/forward-records.conf
+      - type: bind
+        read_only: true
+        source: ./local-zone.conf
+        target: /opt/unbound/etc/unbound/a-records.conf
+    restart: unless-stopped
