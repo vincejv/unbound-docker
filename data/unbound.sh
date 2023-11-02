@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 reserved=12582912
 availableMemory=$((1024 * $( (grep MemAvailable /proc/meminfo || grep MemTotal /proc/meminfo) | sed 's/[^0-9]//g' ) ))
@@ -114,7 +114,7 @@ server:
     # If you want to log to a file, use:
     # logfile: /opt/unbound/etc/unbound/unbound.log
     # Set log location (using /dev/null further limits logging)
-    logfile: /dev/null
+    logfile: ""
 
     # Set logging level
     # Level 0: No verbosity, only errors.
@@ -123,7 +123,7 @@ server:
     # Level 3: Gives query level information, output per query.
     # Level 4:  Gives algorithm level information.
     # Level 5: Logs client identification for cache misses.
-    verbosity: 0
+    verbosity: 1
 
     ###########################################################################
     # PRIVACY SETTINGS
