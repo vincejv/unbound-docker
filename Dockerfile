@@ -73,7 +73,7 @@ ENV NAME=unbound \
 
 COPY --from=unbound /opt /opt
 
-RUN apk add --no-cache perl && rm -rf /var/cache/apk/* && \
+RUN apk add --no-cache bc && rm -rf /var/cache/apk/* && \
     rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
     addgroup -S _unbound && adduser -S _unbound -G _unbound

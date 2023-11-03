@@ -19,7 +19,8 @@ export nproc
 if [ "$nproc" -gt 1 ]; then
     threads=$((nproc - 1))
     # Calculate base 2 log of the number of processors
-    nproc_log=$(perl -e 'printf "%5.5f\n", log($ENV{nproc})/log(2);')
+    nproc_log=$(echo "l(${nproc})/l(2)" | bc -l)
+    nproc_log=$(printf "%5.5f" "${nproc_log}")
 
     # Round the logarithm to an integer
     rounded_nproc_log="$(printf '%.*f\n' 0 "$nproc_log")"
