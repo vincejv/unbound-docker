@@ -97,7 +97,7 @@ jobs:
         run: |
           mkdir -p /tmp/digests-sandybridge
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
+          touch "/tmp/digests-sandybridge/${digest#sha256:}"
       - name: Upload digest
         uses: actions/upload-artifact@v3
         with:
