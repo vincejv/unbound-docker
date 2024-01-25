@@ -1,4 +1,59 @@
-# Stage 1: Create builder image
+# Stage 1: Build openssl
+FROM --platform=${TARGETPLATFORM} debian:bookworm as openssl
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+ENV VERSION_OPENSSL=openssl-3.2.0 \
+    SHA256_OPENSSL=14c826f07c7e433706fb5c69fa9e25dab95684844b4c962a2cf1bf183eb4690e \
+    SOURCE_OPENSSL=https://www.openssl.org/source/ \
+    # OpenSSL OMC
+    OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
+    # Richard Levitte
+    OPGP_OPENSSL_2=7953AC1FBC3DC8B3B292393ED5E9E43F7DF9EE8C \
+    # Matt Caswell
+    OPGP_OPENSSL_3=8657ABB260F056B1E5190839D9C4D26D0E604491 \
+    # Paul Dale
+    OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
+    # Tomas Mraz
+    OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C
+
+WORKDIR /tmp/src
+
+RUN set -e -x && \
+    build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev" && \
+    DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
+      $build_deps && \
+    curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
+    echo "${SHA256_OPENSSL} ./openssl.tar.gz" | sha256sum -c - && \
+    curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
+    GNUPGHOME="$(mktemp -d)" && \
+    export GNUPGHOME && \
+    gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
+    gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
+    tar xzf openssl.tar.gz && \
+    cd $VERSION_OPENSSL && \
+    ./config \
+      --prefix=/opt/openssl \
+      --openssldir=/opt/openssl \
+      no-weak-ssl-ciphers \
+      no-ssl3 \
+      no-shared \
+      -DOPENSSL_NO_HEARTBEATS \
+      -fstack-protector-strong && \
+    make depend && \
+    nproc | xargs -I % make -j% && \
+    make install_sw && \
+    apt-get purge -y --auto-remove \
+      $build_deps && \
+    rm -rf \
+        /tmp/* \
+        /var/tmp/* \
+        /var/lib/apt/lists/*
+
+# Stage 2: Create builder image
 FROM --platform=${TARGETPLATFORM} debian:bookworm as unbound
 
 ARG TARGETPLATFORM
@@ -15,7 +70,8 @@ ENV NAME=unbound \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
 WORKDIR /src
-RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make" && \
+COPY --from=openssl /opt/openssl /opt/openssl
+RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libsodium-dev make" && \
     set -x && \
     DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
       $build_deps \
@@ -40,7 +96,7 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
         --prefix=/opt/unbound \
         --with-pthreads \
         --with-username=_unbound \
-        --with-ssl \
+        --with-ssl=/opt/openssl \
         --with-libevent \
         --with-libnghttp2 \
         --enable-dnstap \
@@ -65,7 +121,7 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
           /opt/unbound/sbin/unbound-control \
           /opt/unbound/sbin/unbound-host
 
-# Stage 2: Final image
+# Stage 3: Final image
 FROM --platform=${TARGETPLATFORM} alpine:latest
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
