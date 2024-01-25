@@ -34,7 +34,7 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
     useradd -g _unbound -s /dev/null -d /etc _unbound && \
     sed -e 's/@LDFLAGS@/@LDFLAGS@ -all-static/' -i Makefile.in && \
 	  LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie" \
-    CFLAGS="-Ofast -funsafe-math-optimizations -ffinite-math-only -fno-rounding-math -fexcess-precision=fast -funroll-loops -ffunction-sections -fdata-sections -pipe" \
+    CFLAGS="-O2 -pipe" \
     ./configure \
         --enable-fully-static \
         --prefix=/opt/unbound \
