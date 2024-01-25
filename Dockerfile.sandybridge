@@ -42,6 +42,7 @@ RUN set -e -x && \
       no-ssl3 \
       no-shared \
       -DOPENSSL_NO_HEARTBEATS \
+      -march=sandybridge -mtune=sandybridge \
       -fstack-protector-strong && \
     make depend && \
     nproc | xargs -I % make -j% && \
