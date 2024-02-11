@@ -6,8 +6,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
-ENV VERSION_OPENSSL=openssl-3.2.0 \
-    SHA256_OPENSSL=14c826f07c7e433706fb5c69fa9e25dab95684844b4c962a2cf1bf183eb4690e \
+ENV VERSION_OPENSSL=openssl-3.2.1 \
+    SHA256_OPENSSL=83c7329fe52c850677d75e5d0b0ca245309b97e8ecbcfdc1dfdc4ab9fac35b39 \
     SOURCE_OPENSSL=https://www.openssl.org/source/ \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
@@ -132,7 +132,14 @@ COPY --from=unbound /opt /opt
 RUN apk add --no-cache bc && rm -rf /var/cache/apk/* && \
     rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
-    addgroup -S _unbound && adduser -S _unbound -G _unbound
+    addgroup -S _unbound && adduser -S _unbound -G _unbound && \
+    rm -rf /opt/openssl && \
+    apk --purge del apk-tools && \
+    rm -f /sbin/apk && \
+    rm -rf /etc/apk && \
+    rm -rf /lib/apk && \
+    rm -rf /usr/share/apk && \
+    rm -rf /var/lib/apk
 
 COPY data/ /
 RUN chmod +x /unbound.sh
