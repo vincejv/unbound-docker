@@ -158,7 +158,6 @@ jobs:
     needs:
       - build-64
       - build-32
-      - build-armv6
     steps:
       - name: Download digests
         uses: actions/download-artifact@v3
