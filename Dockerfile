@@ -132,14 +132,7 @@ COPY --from=unbound /opt /opt
 RUN apk add --no-cache bc && rm -rf /var/cache/apk/* && \
     rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
-    addgroup -S _unbound && adduser -S _unbound -G _unbound && \
-    rm -rf /opt/openssl && \
-    apk --purge del apk-tools && \
-    rm -f /sbin/apk && \
-    rm -rf /etc/apk && \
-    rm -rf /lib/apk && \
-    rm -rf /usr/share/apk && \
-    rm -rf /var/lib/apk
+    addgroup -S _unbound && adduser -S _unbound -G _unbound
 
 COPY data/ /
 RUN chmod +x /unbound.sh
