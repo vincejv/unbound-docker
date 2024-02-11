@@ -143,7 +143,6 @@ COPY --from=builder /etc/passwd /etc/group /etc/
 COPY --from=unbound /opt /opt
 
 RUN apk add --no-cache bc && rm -rf /var/cache/apk/* && \
-    apk --purge del apk-tools && \
     rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
     rm -rf /opt/openssl
