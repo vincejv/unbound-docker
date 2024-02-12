@@ -49,7 +49,8 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
         --enable-event-api \
         --enable-dnscrypt \
         --disable-shared \
-	      --disable-rpath \
+        --disable-static \
+	    --disable-rpath \
         --enable-subnet && \
     make -j$(($(nproc --all)+1)) && \
     make install && \

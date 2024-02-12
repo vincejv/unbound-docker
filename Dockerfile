@@ -110,6 +110,7 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
         --enable-event-api \
         --enable-dnscrypt \
         --disable-shared \
+        --disable-static \
 	      --disable-rpath \
         --enable-subnet && \
     make -j$(($(nproc --all)+1)) && \
