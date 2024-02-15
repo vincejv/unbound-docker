@@ -34,19 +34,12 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
     useradd -g _unbound -s /dev/null -d /etc _unbound && \
     sed -e 's/@LDFLAGS@/@LDFLAGS@ -all-static/' -i Makefile.in && \
 	  LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie" \
-    CFLAGS="-O2 -pipe" \
+    CFLAGS="-Os -pipe" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \
         --with-username=_unbound \
-        --with-ssl \
         --with-libevent \
-        --with-libnghttp2 \
-        --enable-dnstap \
-        --enable-tfo-server \
-        --enable-tfo-client \
-        --enable-event-api \
-        --enable-dnscrypt \
         --disable-shared \
         --enable-fully-static \
 	    --disable-rpath \

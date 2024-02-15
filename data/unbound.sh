@@ -5,15 +5,15 @@ availableMemory=$((1024 * $( (grep MemAvailable /proc/meminfo || grep MemTotal /
 memoryLimit=$availableMemory
 [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ] && memoryLimit=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes | sed 's/[^0-9]//g')
 [ -r /sys/fs/cgroup/memory.max ] && memoryLimit=$(cat /sys/fs/cgroup/memory.max | sed 's/[^0-9]//g')
-[[ ! -z $memoryLimit && $memoryLimit -gt 0 && $memoryLimit -lt $availableMemory ]] && availableMemory=$memoryLimit
-if [ $availableMemory -le $(($reserved * 2)) ]; then
+[ -n "$memoryLimit" ] && [ "$memoryLimit" -gt 0 ] && [ "$memoryLimit" -lt "$availableMemory" ] && availableMemory=$memoryLimit
+if [ "$availableMemory" -le $((reserved * 2)) ]; then
     echo "Not enough memory" >&2
     exit 1
 fi
-availableMemory=$(($availableMemory - $reserved))
-rr_cache_size=$(($availableMemory / 3))
+availableMemory=$((availableMemory - reserved))
+rr_cache_size=$((availableMemory / 3))
 # Use roughly twice as much rrset cache memory as msg cache memory
-msg_cache_size=$(($rr_cache_size / 2))
+msg_cache_size=$((rr_cache_size / 2))
 nproc=$(nproc)
 export nproc
 if [ "$nproc" -gt 1 ]; then
@@ -27,7 +27,7 @@ if [ "$nproc" -gt 1 ]; then
 
     # Set *-slabs to a power of 2 close to the num-threads value.
     # This reduces lock contention.
-    slabs=$(( 2 ** rounded_nproc_log ))
+    slabs=$(echo "2^${rounded_nproc_log}" | bc)
 else
     threads=1
     slabs=4
