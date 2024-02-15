@@ -34,47 +34,6 @@ ARG UNBOUND_GID=102
 RUN addgroup -S -g ${UNBOUND_GID} _unbound \
 	&& adduser -S -g _unbound -h /var/unbound -u ${UNBOUND_UID} -D -H -G _unbound _unbound
 
-# Stage 2: Build OpenSSL
-FROM --platform=${TARGETPLATFORM} builder as openssl
-
-ENV VERSION_OPENSSL=openssl-3.2.1 \
-    SHA256_OPENSSL=83c7329fe52c850677d75e5d0b0ca245309b97e8ecbcfdc1dfdc4ab9fac35b39 \
-    SOURCE_OPENSSL=https://www.openssl.org/source/ \
-    # OpenSSL OMC
-    OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
-    # Richard Levitte
-    OPGP_OPENSSL_2=7953AC1FBC3DC8B3B292393ED5E9E43F7DF9EE8C \
-    # Matt Caswell
-    OPGP_OPENSSL_3=8657ABB260F056B1E5190839D9C4D26D0E604491 \
-    # Paul Dale
-    OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
-    # Tomas Mraz
-    OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C
-
-WORKDIR /tmp/src
-
-RUN curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
-    echo "${SHA256_OPENSSL} ./openssl.tar.gz" | sha256sum -c - && \
-    curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
-    GNUPGHOME="$(mktemp -d)" && \
-    export GNUPGHOME && \
-    gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
-    gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
-    tar xzf openssl.tar.gz && \
-    cd $VERSION_OPENSSL && \
-    ./config \
-      --prefix=/opt/openssl \
-      --openssldir=/opt/openssl \
-      no-weak-ssl-ciphers \
-      no-ssl3 \
-      no-shared \
-      -DOPENSSL_NO_HEARTBEATS \
-      -O2 -pipe \
-      -fstack-protector-strong && \
-    make depend && \
-    nproc | xargs -I % make -j% && \
-    make install_sw
-
 # Stage 2: Build unbound from source
 FROM --platform=${TARGETPLATFORM} builder as unbound
 
@@ -92,24 +51,17 @@ ENV NAME=unbound \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
 WORKDIR /src
-COPY --from=openssl /opt/openssl /opt/openssl
+
 RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
-    CFLAGS="-O2 -pipe" \
+    CFLAGS="-Os -pipe" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \
         --with-username=_unbound \
-        --with-ssl=/opt/openssl \
         --with-libevent \
-        --with-libnghttp2 \
-        --enable-dnstap \
-        --enable-tfo-server \
-        --enable-tfo-client \
-        --enable-event-api \
-        --enable-dnscrypt \
         --disable-shared \
         --disable-static \
 	      --disable-rpath \
@@ -135,7 +87,8 @@ ENV NAME=unbound \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
 COPY --from=builder /lib/ld-musl*.so.1 /lib/
-COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/
+COPY --from=builder /lib/libcrypto.so.3 /lib/libssl.so.3 /lib/
+COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/
 COPY --from=builder /etc/ssl/ /etc/ssl/
 COPY --from=builder /etc/passwd /etc/group /etc/
 
