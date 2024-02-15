@@ -69,7 +69,7 @@ RUN curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
       no-ssl3 \
       no-shared \
       -DOPENSSL_NO_HEARTBEATS \
-      -march=sandybridge -mtune=sandybridge \
+      -O2 -pipe -march=sandybridge -mtune=sandybridge \
       -fstack-protector-strong && \
     make depend && \
     nproc | xargs -I % make -j% && \
@@ -85,9 +85,9 @@ ARG TARGETARCH
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.19.0 \
-    UNBOUND_SHA256=a97532468854c61c2de48ca4170de854fd3bc95c8043bb0cfb0fe26605966624 \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.19.0.tar.gz \
+    UNBOUND_VERSION=1.19.1 \
+    UNBOUND_SHA256=bc1d576f3dd846a0739adc41ffaa702404c6767d2b6082deb9f2f97cbb24a3a9 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.19.1.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
@@ -129,13 +129,12 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} alpine:latest
+FROM --platform=${TARGETPLATFORM} busybox:musl
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
 COPY --from=builder /lib/ld-musl*.so.1 /lib/
-COPY --from=builder /usr/lib/libgcc_s.so.1 /usr/lib/
 COPY --from=builder /lib/libcrypto.so.3 /lib/libssl.so.3 /lib/
 COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/
 COPY --from=builder /etc/ssl/ /etc/ssl/
@@ -143,8 +142,7 @@ COPY --from=builder /etc/passwd /etc/group /etc/
 
 COPY --from=unbound /opt /opt
 
-RUN apk add --no-cache bc && rm -rf /var/cache/apk/* && \
-    rm -rf /opt/unbound/include && \
+RUN rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
     rm -rf /opt/openssl
 
