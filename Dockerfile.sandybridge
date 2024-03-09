@@ -69,7 +69,7 @@ RUN curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
       no-ssl3 \
       no-shared \
       -DOPENSSL_NO_HEARTBEATS \
-      -O2 -pipe -march=sandybridge -mtune=sandybridge \
+      -O3 -pipe -march=sandybridge -mtune=sandybridge \
       -fstack-protector-strong && \
     make depend && \
     nproc | xargs -I % make -j% && \
@@ -85,9 +85,9 @@ ARG TARGETARCH
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.19.1 \
-    UNBOUND_SHA256=bc1d576f3dd846a0739adc41ffaa702404c6767d2b6082deb9f2f97cbb24a3a9 \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.19.1.tar.gz \
+    UNBOUND_VERSION=1.19.2 \
+    UNBOUND_SHA256=cc560d345734226c1b39e71a769797e7fdde2265cbb77ebce542704bba489e55 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.19.2.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
@@ -97,7 +97,7 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
-    CFLAGS="-O2 -pipe -march=sandybridge -mtune=sandybridge" \
+    CFLAGS="-O3 -pipe -march=sandybridge -mtune=sandybridge" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \
