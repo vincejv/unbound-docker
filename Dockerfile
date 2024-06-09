@@ -17,6 +17,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   curl \
   gnupg \
   flex \
+  hiredis-dev \
 	libevent-dev \
   nghttp2-dev \
 	libsodium-dev \
@@ -113,6 +114,7 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
         --enable-event-api \
         --enable-dnscrypt \
         --enable-cachedb \
+        --with-libhiredis \
         --disable-shared \
         --disable-static \
 	      --disable-rpath \
