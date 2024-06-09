@@ -110,6 +110,7 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
         --enable-tfo-client \
         --enable-event-api \
         --enable-dnscrypt \
+        --enable-cachedb \
         --disable-shared \
         --disable-static \
 	      --disable-rpath \

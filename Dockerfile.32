@@ -47,6 +47,7 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
         --enable-tfo-client \
         --enable-event-api \
         --enable-dnscrypt \
+        --enable-cachedb \
         --disable-shared \
         --enable-fully-static \
 	    --disable-rpath \
