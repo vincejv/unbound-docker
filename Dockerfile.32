@@ -75,7 +75,7 @@ ENV NAME=unbound \
 
 COPY --from=unbound /opt /opt
 
-RUN apk add --no-cache bc && rm -rf /var/cache/apk/* && \
+RUN apk add --no-cache bc hiredis && rm -rf /var/cache/apk/* && \
     addgroup -S _unbound && adduser -S _unbound -G _unbound
 
 COPY data/ /
