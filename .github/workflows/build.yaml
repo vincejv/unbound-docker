@@ -59,7 +59,7 @@ jobs:
   build-64-slim:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform:
           - linux/amd64

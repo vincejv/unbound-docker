@@ -15,7 +15,7 @@ ENV NAME=unbound \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
 WORKDIR /tmp/src
-RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make" && \
+RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make bison flex" && \
     set -x && \
     DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
       $build_deps \

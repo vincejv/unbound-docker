@@ -10,11 +10,13 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
 	apk add --update --cache-dir=/var/cache/apk \
 	binutils \
 	bind-tools \
+  bison \
 	build-base \
 	ca-certificates-bundle \
   coreutils \
   curl \
   gnupg \
+  flex \
 	libevent-dev \
   nghttp2-dev \
 	libsodium-dev \

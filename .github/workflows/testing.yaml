@@ -108,7 +108,7 @@ jobs:
   build-32:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform:
           - linux/arm/v7
