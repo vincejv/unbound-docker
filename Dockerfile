@@ -13,7 +13,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   bison \
 	build-base \
 	ca-certificates-bundle \
-  clang18 \
+  clang17 \
   coreutils \
   curl \
   gnupg \
@@ -23,7 +23,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   nghttp2-dev \
 	libsodium-dev \
   linux-headers \
-  llvm18 \
+  llvm17 \
 	openssl-dev \
   perl \
   protobuf-c \
@@ -59,8 +59,8 @@ ENV VERSION_OPENSSL=openssl-3.3.0 \
     CXXFLAGS="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
-    CC=clang-18 \
-    CXX=clang++-18
+    CC=clang-17 \
+    CXX=clang++-17
 
 WORKDIR /tmp/src
 
@@ -104,8 +104,8 @@ ENV NAME=unbound \
     CXXFLAGS="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
-    CC=clang-18 \
-    CXX=clang++-18
+    CC=clang-17 \
+    CXX=clang++-17
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
