@@ -13,6 +13,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   bison \
 	build-base \
 	ca-certificates-bundle \
+  clang18 \
   coreutils \
   curl \
   gnupg \
@@ -22,6 +23,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   nghttp2-dev \
 	libsodium-dev \
   linux-headers \
+  llvm18 \
 	openssl-dev \
   perl \
   protobuf-c \
@@ -52,7 +54,13 @@ ENV VERSION_OPENSSL=openssl-3.3.0 \
     # Paul Dale
     OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
     # Tomas Mraz
-    OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C
+    OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C \
+    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer -march=sandybridge -mtune=sandybridge" \
+    CXXFLAGS="$CFLAGS" \
+    CPPFLAGS="$CFLAGS" \
+    LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
+    CC=clang-18 \
+    CXX=clang++-18
 
 WORKDIR /tmp/src
 
@@ -72,7 +80,6 @@ RUN curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
       no-ssl3 \
       no-shared \
       -DOPENSSL_NO_HEARTBEATS \
-      -O3 -pipe -march=sandybridge -mtune=sandybridge \
       -fstack-protector-strong && \
     make depend && \
     nproc | xargs -I % make -j% && \
@@ -92,7 +99,13 @@ ENV NAME=unbound \
     UNBOUND_SHA256=08833968bee49d592e3fda9c3bc760de7a21c563d5a8ab5850861af2fd118332 \
     UNBOUND_DOWNLOAD_URL=https://github.com/vincejv/unbound-docker/releases/download/contribs/unbound-master-9603924.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
-    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
+    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
+    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer -march=sandybridge -mtune=sandybridge" \
+    CXXFLAGS="$CFLAGS" \
+    CPPFLAGS="$CFLAGS" \
+    LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
+    CC=clang-18 \
+    CXX=clang++-18
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
@@ -100,7 +113,6 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
-    CFLAGS="-O3 -pipe -march=sandybridge -mtune=sandybridge" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \

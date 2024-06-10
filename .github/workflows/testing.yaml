@@ -11,7 +11,7 @@ jobs:
   build-64:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform:
           - linux/amd64
@@ -59,7 +59,7 @@ jobs:
   build-64-slim:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform:
           - linux/amd64
@@ -156,7 +156,7 @@ jobs:
   build-32-slim:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform:
           - linux/arm/v7
@@ -204,7 +204,7 @@ jobs:
   build-sandybridge:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform:
           - linux/amd64
@@ -251,7 +251,7 @@ jobs:
   build-sandybridge-slim:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform:
           - linux/amd64
