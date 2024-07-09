@@ -92,7 +92,7 @@ RUN apt-get install -y --no-install-recommends \
       bsdmainutils \ 
       ca-certificates \
       flex \
-      libevent-2.1-7 \
+      libevent \
       libexpat1 \
       libhiredis-dev \
       libprotobuf-c-dev \
