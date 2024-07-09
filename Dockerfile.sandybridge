@@ -1,37 +1,18 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} alpine:latest as builder
+FROM --platform=${TARGETPLATFORM} debian:bookworm as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
-	apk add --update --cache-dir=/var/cache/apk \
-	binutils \
-	bind-tools \
-  bison \
-	build-base \
-	ca-certificates-bundle \
-  clang17 \
-  coreutils \
-  curl \
-  gnupg \
-  flex \
-  hiredis-dev \
-	libevent-dev \
-  nghttp2-dev \
-	libsodium-dev \
-  linux-headers \
-  llvm17 \
-	openssl-dev \
-  perl \
-  protobuf-c \
-  protobuf-c-compiler \
-  protobuf-c-dev \
-  protobuf-dev \
-  protoc \
-	expat-dev
+RUN set -e -x && \
+  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev wget" && \
+  DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
+    $build_deps && \
+  # download install clang and llvm
+  wget https://apt.llvm.org/llvm.sh && \
+  chmod +x llvm.sh && ./llvm.sh 17
 
 ARG UNBOUND_UID=101
 ARG UNBOUND_GID=102
@@ -109,7 +90,15 @@ ENV NAME=unbound \
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
-RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
+RUN apt-get install -y --no-install-recommends 
+      bsdmainutils \ 
+      ca-certificates \
+      libevent-2.1-7 \
+      libexpat1 \
+      libhiredis-dev \
+      libprotobuf-c-dev \
+      protobuf-c-compiler && \
+    curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
@@ -146,7 +135,7 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} busybox:musl
+FROM --platform=${TARGETPLATFORM} busybox:glibc
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
