@@ -15,7 +15,7 @@ RUN set -e -x && \
   chmod +x llvm.sh && ./llvm.sh 17
 
 RUN groupadd _unbound && \
-    useradd -g _unbound -s /dev/null -d /etc _unbound && \
+    useradd -g _unbound -s /dev/null -d /etc _unbound
 
 # Stage 2: Build OpenSSL
 FROM --platform=${TARGETPLATFORM} builder as openssl
