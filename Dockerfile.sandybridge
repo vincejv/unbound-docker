@@ -7,7 +7,7 @@ ARG TARGETOS
 ARG TARGETARCH
 
 RUN set -e -x && \
-  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev wget" && \
+  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release software-properties-common wget" && \
   DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
     $build_deps && \
   # download install clang and llvm
