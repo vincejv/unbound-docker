@@ -88,8 +88,10 @@ ENV NAME=unbound \
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
 RUN apt-get install -y --no-install-recommends \
+      bison \
       bsdmainutils \ 
       ca-certificates \
+      flex \
       libevent-2.1-7 \
       libexpat1 \
       libhiredis-dev \
@@ -137,7 +139,6 @@ ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
-COPY --from=builder /lib/ld-musl*.so.1 /lib/
 COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/libhiredis.so.* /usr/lib/
 COPY --from=builder /etc/ssl/ /etc/ssl/
 COPY --from=builder /etc/passwd /etc/group /etc/
