@@ -14,11 +14,8 @@ RUN set -e -x && \
   wget https://apt.llvm.org/llvm.sh && \
   chmod +x llvm.sh && ./llvm.sh 17
 
-ARG UNBOUND_UID=101
-ARG UNBOUND_GID=102
-
-RUN addgroup -S -g ${UNBOUND_GID} _unbound \
-	&& adduser -S -g _unbound -h /var/unbound -u ${UNBOUND_UID} -D -H -G _unbound _unbound
+RUN groupadd _unbound && \
+    useradd -g _unbound -s /dev/null -d /etc _unbound && \
 
 # Stage 2: Build OpenSSL
 FROM --platform=${TARGETPLATFORM} builder as openssl
