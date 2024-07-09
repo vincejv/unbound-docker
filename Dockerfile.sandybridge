@@ -90,7 +90,7 @@ ENV NAME=unbound \
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
-RUN apt-get install -y --no-install-recommends 
+RUN apt-get install -y --no-install-recommends \
       bsdmainutils \ 
       ca-certificates \
       libevent-2.1-7 \
