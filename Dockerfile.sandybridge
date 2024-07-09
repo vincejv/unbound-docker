@@ -92,9 +92,13 @@ RUN apt-get install -y --no-install-recommends \
       bsdmainutils \ 
       ca-certificates \
       flex \
-      libevent \
+      libc-dev \
+      libevent-2.1-7 \
+      libevent-dev \
+      libexpat1-dev \
       libexpat1 \
       libhiredis-dev \
+      libnghttp2-dev \
       libprotobuf-c-dev \
       protobuf-c-compiler && \
     curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
