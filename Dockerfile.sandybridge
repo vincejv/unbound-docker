@@ -151,6 +151,7 @@ COPY --from=builder /etc/passwd /etc/group /etc/
 COPY --from=unbound /opt /opt
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+      bc \
       bsdmainutils \
       ca-certificates \
       libsodium23 \
