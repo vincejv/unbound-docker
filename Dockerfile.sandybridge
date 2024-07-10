@@ -139,18 +139,31 @@ RUN apt-get install -y --no-install-recommends \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} busybox:glibc
+FROM --platform=${TARGETPLATFORM} debian:bookworm-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
-COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/libhiredis.so.* /usr/lib/
-COPY --from=builder /etc/ssl/ /etc/ssl/
+# COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/libhiredis.so.* /usr/lib/
+# COPY --from=builder /etc/ssl/ /etc/ssl/
 COPY --from=builder /etc/passwd /etc/group /etc/
 
 COPY --from=unbound /opt /opt
 
-RUN rm -rf /opt/unbound/include && \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      bsdmainutils \
+      ca-certificates \
+      libsodium23 \
+      libexpat1 \
+      libevent-2.1-7 \
+      libhiredis0.14 \
+      libnghttp2-14 \
+      libprotobuf-c1 && \
+    # Clean image
+    apt-get clean autoclean && \
+    apt-get autoremove --yes && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
+    rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
     rm -rf /opt/openssl
 
