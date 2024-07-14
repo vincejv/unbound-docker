@@ -1,49 +1,27 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} alpine:latest as builder
+FROM --platform=${TARGETPLATFORM} debian:bookworm as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
-	apk add --update --cache-dir=/var/cache/apk \
-	binutils \
-	bind-tools \
-  bison \
-	build-base \
-	ca-certificates-bundle \
-  clang17 \
-  coreutils \
-  curl \
-  gnupg \
-  flex \
-  hiredis-dev \
-	libevent-dev \
-  nghttp2-dev \
-	libsodium-dev \
-  linux-headers \
-  llvm17 \
-	openssl-dev \
-  perl \
-  protobuf-c \
-  protobuf-c-compiler \
-  protobuf-c-dev \
-  protobuf-dev \
-  protoc \
-	expat-dev
+RUN set -e -x && \
+  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release software-properties-common wget" && \
+  DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
+    $build_deps && \
+  # download install clang and llvm
+  wget https://apt.llvm.org/llvm.sh && \
+  chmod +x llvm.sh && ./llvm.sh 17
 
-ARG UNBOUND_UID=101
-ARG UNBOUND_GID=102
-
-RUN addgroup -S -g ${UNBOUND_GID} _unbound \
-	&& adduser -S -g _unbound -h /var/unbound -u ${UNBOUND_UID} -D -H -G _unbound _unbound
+RUN groupadd _unbound && \
+    useradd -g _unbound -s /dev/null -d /etc _unbound
 
 # Stage 2: Build OpenSSL
 FROM --platform=${TARGETPLATFORM} builder as openssl
 
-ENV VERSION_OPENSSL=openssl-3.3.0 \
-    SHA256_OPENSSL=53e66b043322a606abf0087e7699a0e033a37fa13feb9742df35c3a33b18fb02 \
+ENV VERSION_OPENSSL=openssl-3.3.1 \
+    SHA256_OPENSSL=777cd596284c883375a2a7a11bf5d2786fc5413255efab20c50d6ffe6d020b7e \
     SOURCE_OPENSSL=https://www.openssl.org/source/ \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
@@ -100,7 +78,7 @@ ENV NAME=unbound \
     UNBOUND_DOWNLOAD_URL=https://github.com/vincejv/unbound-docker/releases/download/contribs/unbound-master-9603924.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer" \
+    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer -march=sandybridge -mtune=sandybridge" \
     CXXFLAGS="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
@@ -109,7 +87,22 @@ ENV NAME=unbound \
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
-RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
+RUN apt-get install -y --no-install-recommends \
+      bison \
+      bsdmainutils \ 
+      ca-certificates \
+      flex \
+      libc-dev \
+      libevent-2.1-7 \
+      libevent-dev \
+      libexpat1-dev \
+      libexpat1 \
+      libhiredis-dev \
+      libnghttp2-dev \
+      libprotobuf-c-dev \
+      libsodium-dev \
+      protobuf-c-compiler && \
+    curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
@@ -146,19 +139,32 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} busybox:musl
+FROM --platform=${TARGETPLATFORM} debian:bookworm-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
-COPY --from=builder /lib/ld-musl*.so.1 /lib/
-COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/libhiredis.so.* /usr/lib/
-COPY --from=builder /etc/ssl/ /etc/ssl/
+# COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/libhiredis.so.* /usr/lib/
+# COPY --from=builder /etc/ssl/ /etc/ssl/
 COPY --from=builder /etc/passwd /etc/group /etc/
 
 COPY --from=unbound /opt /opt
 
-RUN rm -rf /opt/unbound/include && \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      bc \
+      bsdmainutils \
+      ca-certificates \
+      libsodium23 \
+      libexpat1 \
+      libevent-2.1-7 \
+      libhiredis0.14 \
+      libnghttp2-14 \
+      libprotobuf-c1 && \
+    # Clean image
+    apt-get clean autoclean && \
+    apt-get autoremove --yes && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
+    rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
     rm -rf /opt/openssl
 
