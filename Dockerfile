@@ -78,7 +78,7 @@ ENV NAME=unbound \
     UNBOUND_DOWNLOAD_URL=https://github.com/vincejv/unbound-docker/releases/download/contribs/unbound-master-9603924.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer -march=sandybridge -mtune=sandybridge" \
+    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer" \
     CXXFLAGS="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
