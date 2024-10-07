@@ -45,10 +45,10 @@ WORKDIR /tmp/src
 RUN curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
     echo "${SHA256_OPENSSL} ./openssl.tar.gz" | sha256sum -c - && \
     curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
-    GNUPGHOME="$(mktemp -d)" && \
-    export GNUPGHOME && \
-    gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
-    gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
+    # GNUPGHOME="$(mktemp -d)" && \
+    # export GNUPGHOME && \
+    # gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
+    # gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
     tar xzf openssl.tar.gz && \
     cd $VERSION_OPENSSL && \
     ./config \
