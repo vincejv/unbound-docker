@@ -22,7 +22,7 @@ FROM --platform=${TARGETPLATFORM} builder as openssl
 
 ENV VERSION_OPENSSL=openssl-3.3.1 \
     SHA256_OPENSSL=777cd596284c883375a2a7a11bf5d2786fc5413255efab20c50d6ffe6d020b7e \
-    SOURCE_OPENSSL=https://www.openssl.org/source/ \
+    SOURCE_OPENSSL=https://github.com/openssl/openssl/releases/download/ \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
     # Richard Levitte
@@ -42,9 +42,9 @@ ENV VERSION_OPENSSL=openssl-3.3.1 \
 
 WORKDIR /tmp/src
 
-RUN curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
+RUN curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
     echo "${SHA256_OPENSSL} ./openssl.tar.gz" | sha256sum -c - && \
-    curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
+    curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
     GNUPGHOME="$(mktemp -d)" && \
     export GNUPGHOME && \
     gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
