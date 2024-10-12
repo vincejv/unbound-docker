@@ -53,7 +53,7 @@ ENV NAME=unbound \
     UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.21.1.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="-Os -pipe -flto -fomit-frame-pointer -march=sandybridge -mtune=sandybridge" \
+    CFLAGS="-Os -pipe -flto -fomit-frame-pointer -march=sandybridge" \
     CXXFLAGS="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="-Os -Wl,--strip-all -Wl,--as-needed" \
