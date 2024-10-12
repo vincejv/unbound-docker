@@ -1,5 +1,5 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} alpine:latest as builder
+FROM --platform=${TARGETPLATFORM} alpine:3.20 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -13,7 +13,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   bison \
 	build-base \
 	ca-certificates-bundle \
-  clang17 \
+  clang18 \
   coreutils \
   curl \
   gnupg \
@@ -22,7 +22,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   nghttp2-dev \
 	libsodium-dev \
   linux-headers \
-  llvm17 \
+  llvm18 \
 	openssl-dev \
   perl \
   protobuf-c \
@@ -57,8 +57,8 @@ ENV NAME=unbound \
     CXXFLAGS="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="-Os -Wl,--strip-all -Wl,--as-needed" \
-    CC=clang-17 \
-    CXX=clang++-17
+    CC=clang-18 \
+    CXX=clang++-18
 
 WORKDIR /src
 
