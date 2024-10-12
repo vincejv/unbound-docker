@@ -13,7 +13,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   bison \
 	build-base \
 	ca-certificates-bundle \
-  clang18 \
+  clang17 \
   coreutils \
   curl \
   gnupg \
@@ -22,7 +22,7 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
   nghttp2-dev \
 	libsodium-dev \
   linux-headers \
-  llvm18 \
+  llvm17 \
 	openssl-dev \
   perl \
   protobuf-c \
@@ -57,8 +57,8 @@ ENV NAME=unbound \
     CXXFLAGS="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="-Os -Wl,--strip-all -Wl,--as-needed" \
-    CC=clang-18 \
-    CXX=clang++-18
+    CC=clang-17 \
+    CXX=clang++-17
 
 WORKDIR /src
 
