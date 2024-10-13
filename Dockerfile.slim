@@ -1,5 +1,5 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} alpine:latest as builder
+FROM --platform=${TARGETPLATFORM} alpine:3.20 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -10,15 +10,19 @@ RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
 	apk add --update --cache-dir=/var/cache/apk \
 	binutils \
 	bind-tools \
+  bison \
 	build-base \
 	ca-certificates-bundle \
+  clang17 \
   coreutils \
   curl \
   gnupg \
+  flex \
 	libevent-dev \
   nghttp2-dev \
 	libsodium-dev \
   linux-headers \
+  llvm17 \
 	openssl-dev \
   perl \
   protobuf-c \
@@ -44,11 +48,17 @@ ARG TARGETARCH
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.20.0 \
-    UNBOUND_SHA256=56b4ceed33639522000fd96775576ddf8782bb3617610715d7f1e777c5ec1dbf \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.20.0.tar.gz \
+    UNBOUND_VERSION=1.21.1 \
+    UNBOUND_SHA256=3036d23c23622b36d3c87e943117bdec1ac8f819636eb978d806416b0fa9ea46 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.21.1.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
-    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
+    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
+    CFLAGS="-Os -pipe -flto -fomit-frame-pointer" \
+    CXXFLAGS="$CFLAGS" \
+    CPPFLAGS="$CFLAGS" \
+    LDFLAGS="-Os -Wl,--strip-all -Wl,--as-needed" \
+    CC=clang-17 \
+    CXX=clang++-17
 
 WORKDIR /src
 
@@ -56,7 +66,6 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
-    CFLAGS="-Os -pipe" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \

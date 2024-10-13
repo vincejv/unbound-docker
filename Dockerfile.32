@@ -8,14 +8,14 @@ ARG TARGETARCH
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.20.0 \
-    UNBOUND_SHA256=56b4ceed33639522000fd96775576ddf8782bb3617610715d7f1e777c5ec1dbf \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.20.0.tar.gz \
+    UNBOUND_VERSION=1.21.1 \
+    UNBOUND_SHA256=3036d23c23622b36d3c87e943117bdec1ac8f819636eb978d806416b0fa9ea46 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.21.1.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
 WORKDIR /tmp/src
-RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make" && \
+RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make bison flex libhiredis-dev" && \
     set -x && \
     DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
       $build_deps \
@@ -47,6 +47,8 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
         --enable-tfo-client \
         --enable-event-api \
         --enable-dnscrypt \
+        --enable-cachedb \
+        --with-libhiredis \
         --disable-shared \
         --enable-fully-static \
 	    --disable-rpath \
@@ -66,14 +68,14 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
           /opt/unbound/sbin/unbound-host
 
 # Stage 2: Final image
-FROM --platform=${TARGETPLATFORM} alpine:latest
+FROM --platform=${TARGETPLATFORM} alpine:3.20
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
 COPY --from=unbound /opt /opt
 
-RUN apk add --no-cache bc && rm -rf /var/cache/apk/* && \
+RUN apk add --no-cache bc hiredis && rm -rf /var/cache/apk/* && \
     addgroup -S _unbound && adduser -S _unbound -G _unbound
 
 COPY data/ /

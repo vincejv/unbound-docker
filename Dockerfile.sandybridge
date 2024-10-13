@@ -1,45 +1,28 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} alpine:latest as builder
+FROM --platform=${TARGETPLATFORM} debian:bookworm as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN --mount=type=cache,id=apk-cache-${TARGETARCH},target=/var/cache/apk \
-	apk add --update --cache-dir=/var/cache/apk \
-	binutils \
-	bind-tools \
-	build-base \
-	ca-certificates-bundle \
-  coreutils \
-  curl \
-  gnupg \
-	libevent-dev \
-  nghttp2-dev \
-	libsodium-dev \
-  linux-headers \
-	openssl-dev \
-  perl \
-  protobuf-c \
-  protobuf-c-compiler \
-  protobuf-c-dev \
-  protobuf-dev \
-  protoc \
-	expat-dev
+RUN set -e -x && \
+  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release software-properties-common wget" && \
+  DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
+    $build_deps && \
+  # download install clang and llvm
+  wget https://apt.llvm.org/llvm.sh && \
+  chmod +x llvm.sh && ./llvm.sh 19
 
-ARG UNBOUND_UID=101
-ARG UNBOUND_GID=102
-
-RUN addgroup -S -g ${UNBOUND_GID} _unbound \
-	&& adduser -S -g _unbound -h /var/unbound -u ${UNBOUND_UID} -D -H -G _unbound _unbound
+RUN groupadd _unbound && \
+    useradd -g _unbound -s /dev/null -d /etc _unbound
 
 # Stage 2: Build OpenSSL
 FROM --platform=${TARGETPLATFORM} builder as openssl
 
-ENV VERSION_OPENSSL=openssl-3.3.0 \
-    SHA256_OPENSSL=53e66b043322a606abf0087e7699a0e033a37fa13feb9742df35c3a33b18fb02 \
-    SOURCE_OPENSSL=https://www.openssl.org/source/ \
+ENV VERSION_OPENSSL=openssl-3.3.2 \
+    SHA256_OPENSSL=2e8a40b01979afe8be0bbfb3de5dc1c6709fedb46d6c89c10da114ab5fc3d281 \
+    SOURCE_OPENSSL=https://github.com/openssl/openssl/releases/download/ \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
     # Richard Levitte
@@ -49,17 +32,23 @@ ENV VERSION_OPENSSL=openssl-3.3.0 \
     # Paul Dale
     OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
     # Tomas Mraz
-    OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C
+    OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C \
+    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer -march=sandybridge -mtune=sandybridge" \
+    CXXFLAGS="$CFLAGS" \
+    CPPFLAGS="$CFLAGS" \
+    LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
+    CC=clang-19 \
+    CXX=clang++-19
 
 WORKDIR /tmp/src
 
-RUN curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
+RUN curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
     echo "${SHA256_OPENSSL} ./openssl.tar.gz" | sha256sum -c - && \
-    curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
-    GNUPGHOME="$(mktemp -d)" && \
-    export GNUPGHOME && \
-    gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
-    gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
+    curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
+    # GNUPGHOME="$(mktemp -d)" && \
+    # export GNUPGHOME && \
+    # gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
+    # gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
     tar xzf openssl.tar.gz && \
     cd $VERSION_OPENSSL && \
     ./config \
@@ -69,7 +58,6 @@ RUN curl -L $SOURCE_OPENSSL$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
       no-ssl3 \
       no-shared \
       -DOPENSSL_NO_HEARTBEATS \
-      -O3 -pipe -march=sandybridge -mtune=sandybridge \
       -fstack-protector-strong && \
     make depend && \
     nproc | xargs -I % make -j% && \
@@ -85,19 +73,39 @@ ARG TARGETARCH
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.20.0 \
-    UNBOUND_SHA256=56b4ceed33639522000fd96775576ddf8782bb3617610715d7f1e777c5ec1dbf \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.20.0.tar.gz \
+    UNBOUND_VERSION=1.21.1 \
+    UNBOUND_SHA256=3036d23c23622b36d3c87e943117bdec1ac8f819636eb978d806416b0fa9ea46 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.21.1.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
-    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
+    ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
+    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer -march=sandybridge" \
+    CXXFLAGS="$CFLAGS" \
+    CPPFLAGS="$CFLAGS" \
+    LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
+    CC=clang-19 \
+    CXX=clang++-19
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
-RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
+RUN apt-get install -y --no-install-recommends \
+      bison \
+      bsdmainutils \ 
+      ca-certificates \
+      flex \
+      libc-dev \
+      libevent-2.1-7 \
+      libevent-dev \
+      libexpat1-dev \
+      libexpat1 \
+      libhiredis-dev \
+      libnghttp2-dev \
+      libprotobuf-c-dev \
+      libsodium-dev \
+      protobuf-c-compiler && \
+    curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
-    CFLAGS="-O3 -pipe -march=sandybridge -mtune=sandybridge" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \
@@ -110,6 +118,8 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
         --enable-tfo-client \
         --enable-event-api \
         --enable-dnscrypt \
+        --enable-cachedb \
+        --with-libhiredis \
         --disable-shared \
         --disable-static \
 	      --disable-rpath \
@@ -129,19 +139,32 @@ RUN curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} busybox:musl
+FROM --platform=${TARGETPLATFORM} debian:bookworm-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
-COPY --from=builder /lib/ld-musl*.so.1 /lib/
-COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/
-COPY --from=builder /etc/ssl/ /etc/ssl/
+# COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/libhiredis.so.* /usr/lib/
+# COPY --from=builder /etc/ssl/ /etc/ssl/
 COPY --from=builder /etc/passwd /etc/group /etc/
 
 COPY --from=unbound /opt /opt
 
-RUN rm -rf /opt/unbound/include && \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      bc \
+      bsdmainutils \
+      ca-certificates \
+      libsodium23 \
+      libexpat1 \
+      libevent-2.1-7 \
+      libhiredis0.14 \
+      libnghttp2-14 \
+      libprotobuf-c1 && \
+    # Clean image
+    apt-get clean autoclean && \
+    apt-get autoremove --yes && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
+    rm -rf /opt/unbound/include && \
     rm -rf /opt/unbound/lib && \
     rm -rf /opt/openssl
 
