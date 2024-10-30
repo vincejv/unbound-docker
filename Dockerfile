@@ -73,9 +73,9 @@ ARG TARGETARCH
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.21.1 \
-    UNBOUND_SHA256=3036d23c23622b36d3c87e943117bdec1ac8f819636eb978d806416b0fa9ea46 \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.21.1.tar.gz \
+    UNBOUND_VERSION=1.22.0 \
+    UNBOUND_SHA256=c5dd1bdef5d5685b2cedb749158dd152c52d44f65529a34ac15cd88d4b1b3d43 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.22.0.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
     CFLAGS="-O3 -pipe -flto -fomit-frame-pointer" \
