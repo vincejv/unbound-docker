@@ -45,6 +45,8 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
+ARG CFLAGS_OPT="-Os -pipe -flto -fomit-frame-pointer"
+ARG LDFLAGS_OPT="-Os -Wl,--strip-all -Wl,--as-needed"
 
 # Build unbound from source
 ENV NAME=unbound \
@@ -53,10 +55,10 @@ ENV NAME=unbound \
     UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.22.0.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="-Os -pipe -flto -fomit-frame-pointer" \
-    CXXFLAGS="$CFLAGS" \
-    CPPFLAGS="$CFLAGS" \
-    LDFLAGS="-Os -Wl,--strip-all -Wl,--as-needed" \
+    CFLAGS="$CFLAGS_OPT" \
+    CXXFLAGS="$CFLAGS_OPT" \
+    CPPFLAGS="$CFLAGS_OPT" \
+    LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-17 \
     CXX=clang++-17
 
