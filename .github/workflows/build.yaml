@@ -6,6 +6,7 @@ on:
 
 env:
   REGISTRY_IMAGE: vincejv/unbound
+  DOCKER_SUFFIX: ""
 
 jobs:
   build-64:
