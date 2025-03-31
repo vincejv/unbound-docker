@@ -37,21 +37,23 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        id: export
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: digests
+          name: digests-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -85,7 +87,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.slim
@@ -93,15 +95,17 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        id: export
         run: |
-          mkdir -p /tmp/digests-slim
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-slim/${digest#sha256:}"
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: digests-slim
-          path: /tmp/digests-slim/*
+          name: digests-${{ steps.export.outputs.digest }}
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
@@ -133,7 +137,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.32
@@ -141,14 +145,16 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        id: export
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: digests
+          name: digests-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -181,7 +187,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.32-slim
@@ -189,15 +195,17 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        id: export
         run: |
-          mkdir -p /tmp/digests-slim
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-slim/${digest#sha256:}"
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: digests-slim
-          path: /tmp/digests-slim/*
+          name: digests-${{ steps.export.outputs.digest }}
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
@@ -228,23 +236,26 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
+          
           file: Dockerfile.sandybridge
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        id: export
         run: |
-          mkdir -p /tmp/digests-sandybridge
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-sandybridge/${digest#sha256:}"
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: digests-sandybridge
-          path: /tmp/digests-sandybridge/*
+          name: digests-${{ steps.export.outputs.digest }}
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
@@ -275,23 +286,26 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
+          
           file: Dockerfile.sandybridge-slim
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        id: export
         run: |
-          mkdir -p /tmp/digests-sandybridge-slim
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-sandybridge-slim/${digest#sha256:}"
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: digests-sandybridge-slim
-          path: /tmp/digests-sandybridge-slim/*
+          name: digests-${{ steps.export.outputs.digest }}
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
@@ -301,8 +315,15 @@ jobs:
       - build-64
       - build-32
     steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: digests
+          pattern: digests-*
+          delete-merged: true
+          retention-days: 1
       - name: Download digests
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: digests
           path: /tmp/digests
@@ -335,11 +356,18 @@ jobs:
       - build-64-slim
       - build-32-slim
     steps:
-      - name: Download digests
-        uses: actions/download-artifact@v3
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
         with:
-          name: digests-slim
-          path: /tmp/digests-slim
+          name: digests
+          pattern: digests-*
+          delete-merged: true
+          retention-days: 1
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          name: digests
+          path: /tmp/digests
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker meta
@@ -355,7 +383,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Create manifest list and push
-        working-directory: /tmp/digests-slim
+        working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
@@ -368,11 +396,18 @@ jobs:
     needs:
       - build-sandybridge
     steps:
-      - name: Download digests
-        uses: actions/download-artifact@v3
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
         with:
-          name: digests-sandybridge
-          path: /tmp/digests-sandybridge
+          name: digests
+          pattern: digests-*
+          delete-merged: true
+          retention-days: 1
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          name: digests
+          path: /tmp/digests
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker meta
@@ -388,7 +423,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Create manifest list and push
-        working-directory: /tmp/digests-sandybridge
+        working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
@@ -401,11 +436,18 @@ jobs:
     needs:
       - build-sandybridge-slim
     steps:
-      - name: Download digests
-        uses: actions/download-artifact@v3
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
         with:
-          name: digests-sandybridge-slim
-          path: /tmp/digests-sandybridge-slim
+          name: digests
+          pattern: digests-*
+          delete-merged: true
+          retention-days: 1
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          name: digests
+          path: /tmp/digests
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker meta
@@ -421,7 +463,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Create manifest list and push
-        working-directory: /tmp/digests-sandybridge-slim
+        working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
