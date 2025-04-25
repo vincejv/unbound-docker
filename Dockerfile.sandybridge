@@ -14,7 +14,7 @@ RUN set -e -x && \
     $build_deps && \
   # download install clang and llvm
   wget https://apt.llvm.org/llvm.sh && \
-  chmod +x llvm.sh && ./llvm.sh 20
+  chmod +x llvm.sh && ./llvm.sh 19
 
 RUN groupadd _unbound && \
     useradd -g _unbound -s /dev/null -d /etc _unbound
@@ -39,8 +39,8 @@ ENV VERSION_OPENSSL=openssl-3.5.0 \
     CXXFLAGS="$CFLAGS_OPT" \
     CPPFLAGS="$CFLAGS_OPT" \
     LDFLAGS="$LDFLAGS_OPT" \
-    CC=clang-20 \
-    CXX=clang++-20
+    CC=clang-19 \
+    CXX=clang++-19
 
 WORKDIR /tmp/src
 
@@ -86,8 +86,8 @@ ENV NAME=unbound \
     CXXFLAGS="$CFLAGS_OPT" \
     CPPFLAGS="$CFLAGS_OPT" \
     LDFLAGS="$LDFLAGS_OPT" \
-    CC=clang-20 \
-    CXX=clang++-20
+    CC=clang-19 \
+    CXX=clang++-19
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
