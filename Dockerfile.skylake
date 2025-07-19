@@ -5,7 +5,7 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
-ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer"
+ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer -march=skylake"
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 RUN set -e -x && \
@@ -24,7 +24,7 @@ FROM --platform=${TARGETPLATFORM} builder as openssl
 
 ENV VERSION_OPENSSL=openssl-3.5.1 \
     SHA256_OPENSSL=529043b15cffa5f36077a4d0af83f3de399807181d607441d734196d889b641f \
-    SOURCE_OPENSSL=https://github.com/openssl/openssl/releases/download \
+    SOURCE_OPENSSL=https://github.com/openssl/openssl/releases/download/ \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
     # Richard Levitte
@@ -72,7 +72,7 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
-ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer"
+ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer -march=skylake"
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 # Build unbound from source
