@@ -1,5 +1,5 @@
 # Stage 1: Build unbound
-FROM --platform=${TARGETPLATFORM} debian:bookworm as unbound
+FROM --platform=${TARGETPLATFORM} debian:trixie as unbound
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -22,7 +22,7 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
       bsdmainutils \
       ca-certificates \
       ldnsutils \
-      libevent-2.1-7 \
+      libevent-2.1-7t64 \
       libexpat1 \
       libprotobuf-c-dev \
       protobuf-c-compiler && \

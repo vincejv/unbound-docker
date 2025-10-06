@@ -1,5 +1,5 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} debian:bookworm as builder
+FROM --platform=${TARGETPLATFORM} debian:trixie as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -9,7 +9,7 @@ ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer -march=sandybridge"
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 RUN set -e -x && \
-  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release software-properties-common wget" && \
+  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release wget" && \
   DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
     $build_deps && \
   # download install clang and llvm
@@ -97,7 +97,7 @@ RUN apt-get install -y --no-install-recommends \
       ca-certificates \
       flex \
       libc-dev \
-      libevent-2.1-7 \
+      libevent-2.1-7t64 \
       libevent-dev \
       libexpat1-dev \
       libexpat1 \
@@ -143,7 +143,7 @@ RUN apt-get install -y --no-install-recommends \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} debian:bookworm-slim
+FROM --platform=${TARGETPLATFORM} debian:trixie-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
@@ -160,8 +160,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
       libsodium23 \
       libexpat1 \
-      libevent-2.1-7 \
-      libhiredis0.14 \
+      libevent-2.1-7t64 \
+      libhiredis1.1.0 \
       libnghttp2-14 \
       libprotobuf-c1 && \
     # Clean image
