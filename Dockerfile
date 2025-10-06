@@ -22,8 +22,8 @@ RUN groupadd _unbound && \
 # Stage 2: Build OpenSSL
 FROM --platform=${TARGETPLATFORM} builder as openssl
 
-ENV VERSION_OPENSSL=openssl-3.5.1 \
-    SHA256_OPENSSL=529043b15cffa5f36077a4d0af83f3de399807181d607441d734196d889b641f \
+ENV VERSION_OPENSSL=openssl-3.6.0 \
+    SHA256_OPENSSL=b6a5f44b7eb69e3fa35dbf15524405b44837a481d43d81daddde3ff21fcbb8e9 \
     SOURCE_OPENSSL=https://github.com/openssl/openssl/releases/download \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
