@@ -60,8 +60,8 @@ ENV NAME=unbound \
     CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CC=clang-17 \
-    CXX=clang++-17
+    CC=clang \
+    CXX=clang++
 
 WORKDIR /src
 

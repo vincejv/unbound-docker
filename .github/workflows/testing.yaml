@@ -70,7 +70,7 @@ jobs:
         march:
           - sandybridge
           - skylake
-          - x86-64-v1
+          - x86-64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -175,7 +175,7 @@ jobs:
         march:
           - sandybridge
           - skylake
-          - x86-64-v1
+          - x86-64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
