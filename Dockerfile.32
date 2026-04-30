@@ -19,7 +19,7 @@ WORKDIR /tmp/src
 
 RUN set -x && \
     if [ "$SLIM" = "true" ]; then \
-        build_deps="curl gcc libc-dev libevent-dev libexpat1-dev make bison flex"; \
+        build_deps="curl gcc libc-dev libevent-dev libexpat1-dev make bison flex libssl-dev libsodium-dev make bison flex"; \
     else \
         build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make bison flex libhiredis-dev"; \
     fi && \
