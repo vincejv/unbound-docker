@@ -10,13 +10,15 @@ env:
 
 jobs:
 
-  build-sandybridge:
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
         platform:
           - linux/amd64
+          - linux/arm64
+          - linux/arm/v6
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +29,7 @@ jobs:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             # set latest tag for default branch
-            type=raw,value=sandybridge-testing
+            type=raw,value=testing
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
@@ -40,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.sandybridge
+          file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
@@ -59,10 +61,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  merge-sandybridge:
+  merge:
     runs-on: ubuntu-latest
     needs:
-      - build-sandybridge
+      - build
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
@@ -84,7 +86,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=sandybridge-testing
+            type=raw,value=testing
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
