@@ -5,6 +5,7 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
+ARG SLIM=false
 
 # Build unbound from source
 ENV NAME=unbound \
@@ -15,8 +16,13 @@ ENV NAME=unbound \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5
 
 WORKDIR /tmp/src
-RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make bison flex libhiredis-dev" && \
-    set -x && \
+
+RUN set -x && \
+    if [ "$SLIM" = "true" ]; then \
+        build_deps="curl gcc libc-dev libevent-dev libexpat1-dev make bison flex"; \
+    else \
+        build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libssl-dev libsodium-dev make bison flex libhiredis-dev"; \
+    fi && \
     DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
       $build_deps \
       bsdmainutils \
@@ -26,41 +32,64 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
       libexpat1 \
       libprotobuf-c-dev \
       protobuf-c-compiler && \
+    \
     curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
+    \
     groupadd _unbound && \
     useradd -g _unbound -s /dev/null -d /etc _unbound && \
+    \
     sed -e 's/@LDFLAGS@/@LDFLAGS@ -all-static/' -i Makefile.in && \
-	  LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie" \
-    CFLAGS="-O3 -pipe" \
-    ./configure \
-        --prefix=/opt/unbound \
-        --with-pthreads \
-        --with-username=_unbound \
-        --with-ssl \
-        --with-libevent \
-        --with-libnghttp2 \
-        --enable-dnstap \
-        --enable-tfo-server \
-        --enable-tfo-client \
-        --enable-event-api \
-        --enable-dnscrypt \
-        --enable-cachedb \
-        --with-libhiredis \
-        --disable-shared \
-        --enable-fully-static \
-	    --disable-rpath \
-        --enable-subnet && \
+    \
+    if [ "$SLIM" = "true" ]; then \
+        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie" \
+        CFLAGS="-Os -pipe" \
+        ./configure \
+            --prefix=/opt/unbound \
+            --with-pthreads \
+            --with-username=_unbound \
+            --with-libevent \
+            --disable-shared \
+            --enable-fully-static \
+            --disable-rpath \
+            --enable-subnet; \
+    else \
+        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie" \
+        CFLAGS="-O3 -pipe" \
+        ./configure \
+            --prefix=/opt/unbound \
+            --with-pthreads \
+            --with-username=_unbound \
+            --with-ssl \
+            --with-libevent \
+            --with-libnghttp2 \
+            --enable-dnstap \
+            --enable-tfo-server \
+            --enable-tfo-client \
+            --enable-event-api \
+            --enable-dnscrypt \
+            --enable-cachedb \
+            --with-libhiredis \
+            --disable-shared \
+            --enable-fully-static \
+            --disable-rpath \
+            --enable-subnet; \
+    fi && \
+    \
     make -j$(($(nproc --all)+1)) && \
     make install && \
+    \
     rm /opt/unbound/etc/unbound/unbound.conf && \
     rm -rf /opt/unbound/share && \
+    \
+    # root hints (unchanged)
     curl -sSL $ROOT_HINTS_URL -o root.hints && \
     ROOT_HINTS_MD5_HASHVAL=$(curl -sSL $ROOT_HINTS_MD5_URL) && \
     echo "${ROOT_HINTS_MD5_HASHVAL} *root.hints" | md5sum -c - && \
     mv root.hints /opt/unbound/etc/unbound/root.hints && \
+    \
     strip /opt/unbound/sbin/unbound \
           /opt/unbound/sbin/unbound-anchor \
           /opt/unbound/sbin/unbound-checkconf \
@@ -69,13 +98,22 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev libs
 
 # Stage 2: Final image
 FROM --platform=${TARGETPLATFORM} alpine:3.20
+
+ARG SLIM=false
+
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
 COPY --from=unbound /opt /opt
 
-RUN apk add --no-cache bc hiredis && rm -rf /var/cache/apk/* && \
+RUN set -x && \
+    if [ "$SLIM" = "true" ]; then \
+        apk add --no-cache bc; \
+    else \
+        apk add --no-cache bc hiredis; \
+    fi && \
+    rm -rf /var/cache/apk/* && \
     addgroup -S _unbound && adduser -S _unbound -G _unbound
 
 COPY data/ /
