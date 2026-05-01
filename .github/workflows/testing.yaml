@@ -18,6 +18,7 @@ jobs:
         platform:
           - linux/arm64
           - linux/arm/v6
+          - linux/amd64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,7 +61,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  build-x86:
+  build-x86-march:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -70,7 +71,6 @@ jobs:
         march:
           - sandybridge
           - skylake
-          - x86-64
         variant:
           - full
           - slim
@@ -113,6 +113,7 @@ jobs:
         platform:
           - linux/arm64
           - linux/arm/v6
+          - linux/amd64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -164,8 +165,8 @@ jobs:
           - linux/arm/v7
           - linux/386
         variant:
-        - slim
-        - full
+          - slim
+          - full
     steps:
       - name: Checkout
         uses: actions/checkout@v4
