@@ -100,7 +100,7 @@ jobs:
           file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile' }}
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ env.REGISTRY_IMAGE }}:${{ matrix.march && format('-{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ env.DOCKER_SUFFIX }}${{ matrix.march && format('-{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
           build-args: |
             MARCH=${{ matrix.march }}
           labels: ${{ steps.meta.outputs.labels }}
