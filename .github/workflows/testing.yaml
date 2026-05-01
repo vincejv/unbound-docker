@@ -37,6 +37,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -46,6 +48,11 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
+            OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
       - name: Export digest
         id: export
         run: |
@@ -92,6 +99,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -102,6 +111,10 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY_IMAGE }}:${{ env.DOCKER_SUFFIX }}${{ matrix.march && format('-{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
           build-args: |
+            OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
+            OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
             MARCH=${{ matrix.march }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -132,6 +145,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -141,6 +156,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
       - name: Export digest
         id: export
         run: |
@@ -185,6 +203,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -193,6 +213,8 @@ jobs:
           file: Dockerfile.32
           platforms: ${{ matrix.platform }}
           build-args: |
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
             SLIM=${{ matrix.variant == 'slim' && 'true' || 'false' }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true

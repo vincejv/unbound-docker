@@ -1,6 +1,8 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} debian:trixie as builder
+FROM debian:trixie AS builder
 
+ARG OPENSSL_VERSION
+ARG OPENSSL_SHA256
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
@@ -22,10 +24,10 @@ RUN groupadd _unbound && \
     useradd -g _unbound -s /dev/null -d /etc _unbound
 
 # Stage 2: Build OpenSSL
-FROM --platform=${TARGETPLATFORM} builder as openssl
+FROM builder AS openssl
 
-ENV VERSION_OPENSSL=openssl-3.6.0 \
-    SHA256_OPENSSL=b6a5f44b7eb69e3fa35dbf15524405b44837a481d43d81daddde3ff21fcbb8e9 \
+ENV OPENSSL_VERSION=openssl-$OPENSSL_VERSION \
+    SHA256_OPENSSL=$OPENSSL_SHA256 \
     SOURCE_OPENSSL=https://github.com/openssl/openssl/releases/download/ \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
@@ -46,15 +48,15 @@ ENV VERSION_OPENSSL=openssl-3.6.0 \
 
 WORKDIR /tmp/src
 
-RUN curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
+RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.tar.gz && \
     echo "${SHA256_OPENSSL} ./openssl.tar.gz" | sha256sum -c - && \
-    curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
+    curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz.asc -o openssl.tar.gz.asc && \
     # GNUPGHOME="$(mktemp -d)" && \
     # export GNUPGHOME && \
     # gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
     # gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
     tar xzf openssl.tar.gz && \
-    cd $VERSION_OPENSSL && \
+    cd $OPENSSL_VERSION && \
     ./config \
       --prefix=/opt/openssl \
       --openssldir=/opt/openssl \
@@ -68,8 +70,10 @@ RUN curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz -o openssl.
     make install_sw
 
 # Stage 2: Build unbound from source
-FROM --platform=${TARGETPLATFORM} builder as unbound
+FROM builder AS unbound
 
+ARG UNBOUND_VERSION
+ARG UNBOUND_SHA256
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
@@ -81,9 +85,9 @@ ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.24.0 \
-    UNBOUND_SHA256=7f2b1633e239409619ae0527f67878b0f33ae0ec0ee5a3a51c042c359ba1eeab \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.24.1.tar.gz \
+    UNBOUND_VERSION=$UNBOUND_VERSION \
+    UNBOUND_SHA256=$UNBOUND_SHA256 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-$UNBOUND_VERSION.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
     CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
@@ -147,7 +151,7 @@ RUN apt-get install -y --no-install-recommends \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} debian:trixie-slim
+FROM debian:trixie-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
