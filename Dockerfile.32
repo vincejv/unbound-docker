@@ -99,7 +99,7 @@ RUN set -x && \
           /opt/unbound/sbin/unbound-host
 
 # Stage 2: Final image
-FROM alpine:3.20
+FROM alpine:3.23
 
 ARG SLIM=false
 
