@@ -46,8 +46,8 @@ RUN set -x && \
     sed -e 's/@LDFLAGS@/@LDFLAGS@ -all-static/' -i Makefile.in && \
     \
     if [ "$SLIM" = "true" ]; then \
-        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie" \
-        CFLAGS="-Os -pipe" \
+        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie -Wl,--strip-all -Wl,--as-needed" \
+        CFLAGS="-Os -pipe -flto -fomit-frame-pointer" \
         ./configure \
             --prefix=/opt/unbound \
             --with-pthreads \
@@ -58,8 +58,8 @@ RUN set -x && \
             --disable-rpath \
             --enable-subnet; \
     else \
-        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie" \
-        CFLAGS="-O3 -pipe" \
+        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie -Wl,--strip-all -Wl,--as-needed" \
+        CFLAGS="-O3 -pipe -flto -fomit-frame-pointer" \
         ./configure \
             --prefix=/opt/unbound \
             --with-pthreads \

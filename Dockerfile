@@ -8,8 +8,7 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer" 
-# -flto -march=sandybridge  insert to above
+ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer" 
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 RUN set -e -x && \
@@ -79,8 +78,7 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer"
-#  -flto -march=sandybridge  insert to above
+ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer"
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 # Build unbound from source
