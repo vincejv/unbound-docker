@@ -63,7 +63,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ steps.export.outputs.digest }}
+          name: digests-full-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -169,7 +169,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ steps.export.outputs.digest }}
+          name: digests-slim-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -228,7 +228,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ steps.export.outputs.digest }}
+          name: digests-${{ matrix.variant == 'slim' && 'slim' || 'full' }}-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -243,7 +243,7 @@ jobs:
         uses: actions/upload-artifact/merge@v4
         with:
           name: digests
-          pattern: digests-*
+          pattern: digests-full-*
           delete-merged: true
           retention-days: 1
       - name: Download digests
@@ -278,12 +278,13 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-slim
+      - build-32
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
           name: digests
-          pattern: digests-*
+          pattern: digests-slim-*
           delete-merged: true
           retention-days: 1
       - name: Download digests
