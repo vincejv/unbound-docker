@@ -1,13 +1,18 @@
 # Stage 1: Prepare builder image
-FROM --platform=${TARGETPLATFORM} debian:bookworm as builder
+FROM debian:trixie AS builder
 
+ARG OPENSSL_VERSION
+ARG OPENSSL_SHA256
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
+ARG MARCH=""
+ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer" 
+ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 RUN set -e -x && \
-  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release software-properties-common wget" && \
+  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release wget" && \
   DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
     $build_deps && \
   # download install clang and llvm
@@ -18,10 +23,10 @@ RUN groupadd _unbound && \
     useradd -g _unbound -s /dev/null -d /etc _unbound
 
 # Stage 2: Build OpenSSL
-FROM --platform=${TARGETPLATFORM} builder as openssl
+FROM builder AS openssl
 
-ENV VERSION_OPENSSL=openssl-3.3.2 \
-    SHA256_OPENSSL=2e8a40b01979afe8be0bbfb3de5dc1c6709fedb46d6c89c10da114ab5fc3d281 \
+ENV OPENSSL_VERSION=openssl-$OPENSSL_VERSION \
+    SHA256_OPENSSL=$OPENSSL_SHA256 \
     SOURCE_OPENSSL=https://github.com/openssl/openssl/releases/download/ \
     # OpenSSL OMC
     OPGP_OPENSSL_1=EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5 \
@@ -33,24 +38,24 @@ ENV VERSION_OPENSSL=openssl-3.3.2 \
     OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
     # Tomas Mraz
     OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C \
-    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer" \
-    CXXFLAGS="$CFLAGS" \
-    CPPFLAGS="$CFLAGS" \
-    LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
+    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-19 \
     CXX=clang++-19
 
 WORKDIR /tmp/src
 
-RUN curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz -o openssl.tar.gz && \
+RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.tar.gz && \
     echo "${SHA256_OPENSSL} ./openssl.tar.gz" | sha256sum -c - && \
-    curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz.asc -o openssl.tar.gz.asc && \
+    curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz.asc -o openssl.tar.gz.asc && \
     # GNUPGHOME="$(mktemp -d)" && \
     # export GNUPGHOME && \
     # gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
     # gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
     tar xzf openssl.tar.gz && \
-    cd $VERSION_OPENSSL && \
+    cd $OPENSSL_VERSION && \
     ./config \
       --prefix=/opt/openssl \
       --openssldir=/opt/openssl \
@@ -64,24 +69,29 @@ RUN curl -L $SOURCE_OPENSSL/$VERSION_OPENSSL/$VERSION_OPENSSL.tar.gz -o openssl.
     make install_sw
 
 # Stage 2: Build unbound from source
-FROM --platform=${TARGETPLATFORM} builder as unbound
+FROM builder AS unbound
 
+ARG UNBOUND_VERSION
+ARG UNBOUND_SHA256
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
+ARG MARCH=""
+ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer"
+ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 # Build unbound from source
 ENV NAME=unbound \
-    UNBOUND_VERSION=1.21.1 \
-    UNBOUND_SHA256=3036d23c23622b36d3c87e943117bdec1ac8f819636eb978d806416b0fa9ea46 \
-    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-1.21.1.tar.gz \
+    UNBOUND_VERSION=$UNBOUND_VERSION \
+    UNBOUND_SHA256=$UNBOUND_SHA256 \
+    UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-$UNBOUND_VERSION.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="-O3 -pipe -flto -fomit-frame-pointer" \
-    CXXFLAGS="$CFLAGS" \
-    CPPFLAGS="$CFLAGS" \
-    LDFLAGS="-O3 -Wl,--strip-all -Wl,--as-needed" \
+    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-19 \
     CXX=clang++-19
 
@@ -93,7 +103,7 @@ RUN apt-get install -y --no-install-recommends \
       ca-certificates \
       flex \
       libc-dev \
-      libevent-2.1-7 \
+      libevent-2.1-7t64 \
       libevent-dev \
       libexpat1-dev \
       libexpat1 \
@@ -139,7 +149,7 @@ RUN apt-get install -y --no-install-recommends \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM --platform=${TARGETPLATFORM} debian:bookworm-slim
+FROM debian:trixie-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
@@ -156,8 +166,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
       libsodium23 \
       libexpat1 \
-      libevent-2.1-7 \
-      libhiredis0.14 \
+      libevent-2.1-7t64 \
+      libhiredis1.1.0 \
       libnghttp2-14 \
       libprotobuf-c1 && \
     # Clean image

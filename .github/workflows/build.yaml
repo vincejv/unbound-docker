@@ -6,102 +6,171 @@ on:
 
 env:
   REGISTRY_IMAGE: vincejv/unbound
+  DOCKER_SUFFIX: latest
 
 jobs:
-  build-64:
+
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
         platform:
+          - linux/arm64
+          - linux/arm/v6
           - linux/amd64
-          # - linux/arm64
-          # - linux/arm/v6
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             # set latest tag for default branch
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ env.DOCKER_SUFFIX }}
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
+          file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
+            OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
       - name: Export digest
+        id: export
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
-          name: digests
+          name: digests-full-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
-  build-64-slim:
+  build-x86-march:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
         platform:
           - linux/amd64
-          - linux/arm64
-          - linux/arm/v6
+        march:
+          - sandybridge
+          - skylake
+        variant:
+          - full
+          - slim
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             # set latest tag for default branch
-            type=raw,value=slim,enable={{is_default_branch}}
+            type=raw,value=${{ matrix.march && format('{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile' }}
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ matrix.march && format('{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
+          build-args: |
+            OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
+            OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
+            MARCH=${{ matrix.march }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-slim:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - linux/arm64
+          - linux/arm/v6
+          - linux/amd64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=slim
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.slim
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
       - name: Export digest
+        id: export
         run: |
-          mkdir -p /tmp/digests-slim
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-slim/${digest#sha256:}"
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
-          name: digests-slim
-          path: /tmp/digests-slim/*
+          name: digests-slim-${{ steps.export.outputs.digest }}
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
@@ -113,210 +182,86 @@ jobs:
         platform:
           - linux/arm/v7
           - linux/386
+        variant:
+          - slim
+          - full
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             # set latest tag for default branch
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ matrix.variant == 'slim' && 'slim' || env.DOCKER_SUFFIX }}
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.32
           platforms: ${{ matrix.platform }}
+          build-args: |
+            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
+            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
+            SLIM=${{ matrix.variant == 'slim' && 'true' || 'false' }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        id: export
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
-          name: digests
+          name: digests-${{ matrix.variant == 'slim' && 'slim' || 'full' }}-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  build-32-slim:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        platform:
-          - linux/arm/v7
-          - linux/386
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            # set latest tag for default branch
-            type=raw,value=slim,enable={{is_default_branch}}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.32-slim
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests-slim
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-slim/${digest#sha256:}"
-      - name: Upload digest
-        uses: actions/upload-artifact@v3
-        with:
-          name: digests-slim
-          path: /tmp/digests-slim/*
-          if-no-files-found: error
-          retention-days: 1
-
-  build-sandybridge:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        platform:
-          - linux/amd64
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            # set latest tag for default branch
-            type=raw,value=sandybridge,enable={{is_default_branch}}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.sandybridge
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests-sandybridge
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-sandybridge/${digest#sha256:}"
-      - name: Upload digest
-        uses: actions/upload-artifact@v3
-        with:
-          name: digests-sandybridge
-          path: /tmp/digests-sandybridge/*
-          if-no-files-found: error
-          retention-days: 1
-
-  build-sandybridge-slim:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        platform:
-          - linux/amd64
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            # set latest tag for default branch
-            type=raw,value=sandybridge-slim,enable={{is_default_branch}}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.sandybridge-slim
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests-sandybridge-slim
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests-sandybridge-slim/${digest#sha256:}"
-      - name: Upload digest
-        uses: actions/upload-artifact@v3
-        with:
-          name: digests-sandybridge-slim
-          path: /tmp/digests-sandybridge-slim/*
           if-no-files-found: error
           retention-days: 1
 
   merge:
     runs-on: ubuntu-latest
     needs:
-      - build-64
+      - build
       - build-32
     steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v7
+        with:
+          name: digests
+          pattern: digests-full-*
+          delete-merged: true
+          retention-days: 1
       - name: Download digests
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: digests
           path: /tmp/digests
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ env.DOCKER_SUFFIX }}
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -332,96 +277,37 @@ jobs:
   merge-slim:
     runs-on: ubuntu-latest
     needs:
-      - build-64-slim
-      - build-32-slim
+      - build-slim
+      - build-32
     steps:
-      - name: Download digests
-        uses: actions/download-artifact@v3
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v7
         with:
-          name: digests-slim
-          path: /tmp/digests-slim
+          name: digests
+          pattern: digests-slim-*
+          delete-merged: true
+          retention-days: 1
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          name: digests
+          path: /tmp/digests
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=slim,enable={{is_default_branch}}
+            type=raw,value=slim
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Create manifest list and push
-        working-directory: /tmp/digests-slim
-        run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
-
-  merge-sandybridge:
-    runs-on: ubuntu-latest
-    needs:
-      - build-sandybridge
-    steps:
-      - name: Download digests
-        uses: actions/download-artifact@v3
-        with:
-          name: digests-sandybridge
-          path: /tmp/digests-sandybridge
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            type=raw,value=sandybridge,enable={{is_default_branch}}
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Create manifest list and push
-        working-directory: /tmp/digests-sandybridge
-        run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
-
-  merge-sandybridge-slim:
-    runs-on: ubuntu-latest
-    needs:
-      - build-sandybridge-slim
-    steps:
-      - name: Download digests
-        uses: actions/download-artifact@v3
-        with:
-          name: digests-sandybridge-slim
-          path: /tmp/digests-sandybridge-slim
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            type=raw,value=sandybridge-slim,enable={{is_default_branch}}
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Create manifest list and push
-        working-directory: /tmp/digests-sandybridge-slim
+        working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
