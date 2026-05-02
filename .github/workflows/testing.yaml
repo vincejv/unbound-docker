@@ -90,7 +90,7 @@ jobs:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             # set latest tag for default branch
-            type=raw,value=${{ env.DOCKER_SUFFIX }}${{ matrix.march && format('-{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
+            type=raw,value=${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
@@ -108,7 +108,7 @@ jobs:
           file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile' }}
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ env.REGISTRY_IMAGE }}:${{ env.DOCKER_SUFFIX }}${{ matrix.march && format('-{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
           build-args: |
             OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
             OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
