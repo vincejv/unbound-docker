@@ -10,7 +10,7 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
 ARG CFLAGS_OPT="-O3 -pipe -fPIC -flto -fomit-frame-pointer" 
-ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
+ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -latomic"
 
 RUN set -e -x && \
   arch="$(dpkg --print-architecture)" && \
@@ -61,7 +61,7 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
     # gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
     tar xzf openssl.tar.gz && \
     arch="$(dpkg --print-architecture)" && \
-    openssl_arch="linux-x86_64" && \
+    openssl_arch="linux-x86_64-clang" && \
     if [ "$arch" = "i386" ]; then \
       openssl_arch="linux-elf"; \
     elif [ "$arch" = "arm64" ]; then \
