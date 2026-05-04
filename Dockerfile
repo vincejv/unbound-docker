@@ -14,7 +14,10 @@ ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
 
 RUN set -e -x && \
   arch="$(dpkg --print-architecture)" && \
-  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release wget $( [ "$arch" = "i386" ] && echo gcc-multilib g++-multilib )" && \
+  build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release wget" && \
+  if [ "$arch" = "i386" ]; then \
+    build_deps="$build_deps gcc-multilib g++-multilib"; \
+  fi && \
   DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
     $build_deps && \
   # download install clang and llvm
