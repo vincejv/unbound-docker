@@ -60,13 +60,24 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
     # gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
     # gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
     tar xzf openssl.tar.gz && \
+    arch="$(dpkg --print-architecture)" && \
+    openssl_arch="linux-x86_64" && \
+    if [ "$arch" = "i386" ]; then \
+      openssl_arch="linux-x86"; \
+    elif [ "$arch" = "arm64" ]; then \
+      openssl_arch="linux-aarch64"; \
+    elif [ "$arch" = "armhf" ]; then \
+      openssl_arch="linux-armv7"; \
+    fi && \
     cd $OPENSSL_VERSION && \
     ./config \
+      $openssl_arch \
       --prefix=/opt/openssl \
       --openssldir=/opt/openssl \
       no-weak-ssl-ciphers \
       no-ssl3 \
       no-shared \
+      no-tests \
       -DOPENSSL_NO_HEARTBEATS \
       -fstack-protector-strong && \
     make depend && \
