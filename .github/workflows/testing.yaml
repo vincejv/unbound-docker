@@ -53,7 +53,7 @@ jobs:
             OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
             UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
-            FLTO=${{ !contains(matrix.platform, 'arm/v6') && '-flto' || '' }}
+            FLTO=${{ !contains(matrix.platform, 'arm') && '-flto' || '' }}
       - name: Export digest
         id: export
         run: |
@@ -117,7 +117,7 @@ jobs:
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
             UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
             MARCH=${{ matrix.march }}
-            FLTO=${{ !contains(matrix.platform, 'arm/v6') && '-flto' || '' }}
+            FLTO=${{ !contains(matrix.platform, 'arm') && '-flto' || '' }}
           labels: ${{ steps.meta.outputs.labels }}
 
   build-slim:
