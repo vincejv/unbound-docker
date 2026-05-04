@@ -134,14 +134,15 @@ RUN apt-get install -y --no-install-recommends \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
     arch="$(dpkg --print-architecture)" && \
-    CFLAGS_EXTRA="" && \
-    LDFLAGS_EXTRA="" && \
+    export CPPFLAGS="-I/opt/openssl/include" && \
+    export CFLAGS="$CFLAGS -I/opt/openssl/include" && \
+    export LDFLAGS="$LDFLAGS -L/opt/openssl/lib -Wl,-rpath,/opt/openssl/lib" && \
+    export PKG_CONFIG_PATH="/opt/openssl/lib/pkgconfig" && \
+    export LIBS="-ldl -pthread" && \
     if [ "$arch" = "i386" ] || [ "$arch" = "armhf" ] || [ "$arch" = "armel" ]; then \
-        CFLAGS_EXTRA="$CFLAGS_EXTRA -m32"; \
-        LDFLAGS_EXTRA="$LDFLAGS_EXTRA -m32"; \
+        export CFLAGS="$CFLAGS -m32" && \
+        export LDFLAGS="$LDFLAGS -m32"; \
     fi && \
-    CFLAGS="$CFLAGS $CFLAGS_EXTRA -I/opt/openssl/include" \
-    LDFLAGS="$LDFLAGS $LDFLAGS_EXTRA -L/opt/openssl/lib" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \
