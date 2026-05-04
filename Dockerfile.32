@@ -33,7 +33,6 @@ RUN set -x && \
       libevent-2.1-7 \
       libexpat1 \
       libprotobuf-c-dev \
-      lld \
       protobuf-c-compiler && \
     \
     curl -sSL $UNBOUND_DOWNLOAD_URL -o unbound.tar.gz && \
@@ -48,8 +47,8 @@ RUN set -x && \
     \
     # disable flto /usr/lib/llvm-19/bin/../lib/LLVMgold.so: error loading plugin: /usr/lib/llvm-19/bin/../lib/LLVMgold.so: cannot open shared object file: No such file or directory
     if [ "$SLIM" = "true" ]; then \
-        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld" \
-        CFLAGS="-Os -pipe -flto -fomit-frame-pointer" \
+        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie -Wl,--strip-all -Wl,--as-needed" \
+        CFLAGS="-Os -pipe -fomit-frame-pointer" \
         ./configure \
             --prefix=/opt/unbound \
             --with-pthreads \
@@ -60,8 +59,8 @@ RUN set -x && \
             --disable-rpath \
             --enable-subnet; \
     else \
-        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld" \
-        CFLAGS="-O3 -pipe -flto -fomit-frame-pointer" \
+        LIBS="-lpthread -lm" LDFLAGS="-Wl,-static -static -static-libgcc -no-pie -Wl,--strip-all -Wl,--as-needed" \
+        CFLAGS="-O3 -pipe -fomit-frame-pointer" \
         ./configure \
             --prefix=/opt/unbound \
             --with-pthreads \
