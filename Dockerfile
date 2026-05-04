@@ -1,6 +1,7 @@
 # Stage 1: Prepare builder image
-FROM debian:trixie AS builder
+FROM public.ecr.aws/docker/library/debian:trixie AS builder
 
+ARG CLANG_VERSION
 ARG OPENSSL_VERSION
 ARG OPENSSL_SHA256
 ARG TARGETPLATFORM
@@ -8,7 +9,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer" 
+ARG FLTO
+ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer" 
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 RUN set -e -x && \
@@ -17,7 +19,7 @@ RUN set -e -x && \
     $build_deps && \
   # download install clang and llvm
   wget https://apt.llvm.org/llvm.sh && \
-  chmod +x llvm.sh && ./llvm.sh 19
+  chmod +x llvm.sh && ./llvm.sh $CLANG_VERSION
 
 RUN groupadd _unbound && \
     useradd -g _unbound -s /dev/null -d /etc _unbound
@@ -38,12 +40,12 @@ ENV OPENSSL_VERSION=openssl-$OPENSSL_VERSION \
     OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
     # Tomas Mraz
     OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C \
-    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
-    CC=clang-19 \
-    CXX=clang++-19
+    CC=clang-$CLANG_VERSION \
+    CXX=clang++-$CLANG_VERSION
 
 WORKDIR /tmp/src
 
@@ -71,6 +73,7 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
 # Stage 2: Build unbound from source
 FROM builder AS unbound
 
+ARG CLANG_VERSION
 ARG UNBOUND_VERSION
 ARG UNBOUND_SHA256
 ARG TARGETPLATFORM
@@ -78,7 +81,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG CFLAGS_OPT="-O3 -pipe -flto -fomit-frame-pointer"
+ARG FLTO
+ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer"
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
 
 # Build unbound from source
@@ -88,12 +92,12 @@ ENV NAME=unbound \
     UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-$UNBOUND_VERSION.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
-    CC=clang-19 \
-    CXX=clang++-19
+    CC=clang-$CLANG_VERSION \
+    CXX=clang++-$CLANG_VERSION
 
 WORKDIR /src
 COPY --from=openssl /opt/openssl /opt/openssl
@@ -132,7 +136,7 @@ RUN apt-get install -y --no-install-recommends \
         --with-libhiredis \
         --disable-shared \
         --disable-static \
-	      --disable-rpath \
+	    --disable-rpath \
         --enable-subnet && \
     make -j$(($(nproc --all)+1)) && \
     make install && \
@@ -149,7 +153,7 @@ RUN apt-get install -y --no-install-recommends \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM debian:trixie-slim
+FROM public.ecr.aws/docker/library/debian:trixie-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."

@@ -49,10 +49,12 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           build-args: |
+            CLANG_VERSION=${{ env.CLANG_VERSION }}
             OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
             OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
             UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
+            FLTO=${{ !contains(matrix.platform, 'arm') && '-flto' || '' }}
       - name: Export digest
         id: export
         run: |
@@ -91,7 +93,7 @@ jobs:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             # set latest tag for default branch
-            type=raw,value=${{ matrix.march && format('{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
+            type=raw,value=${{ matrix.variant == 'slim' && 'slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
@@ -109,13 +111,15 @@ jobs:
           file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile' }}
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ env.REGISTRY_IMAGE }}:${{ matrix.march && format('{0}', matrix.march) || '' }}${{ matrix.variant == 'slim' && '-slim' || '' }}
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ matrix.variant == 'slim' && 'slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
           build-args: |
+            CLANG_VERSION=${{ env.CLANG_VERSION }}
             OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
             OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
             UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
             MARCH=${{ matrix.march }}
+            FLTO=${{ !contains(matrix.platform, 'arm') && '-flto' || '' }}
           labels: ${{ steps.meta.outputs.labels }}
 
   build-slim:
