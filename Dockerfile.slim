@@ -49,7 +49,7 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
 ARG CFLAGS_OPT="-Os -pipe -flto -fomit-frame-pointer"
-ARG LDFLAGS_OPT="-Os -Wl,--strip-all -Wl,--as-needed"
+ARG LDFLAGS_OPT="-Os -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
 
 # Build unbound from source
 ENV NAME=unbound \

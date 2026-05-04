@@ -9,9 +9,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG FLTO
 ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer" 
-ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
+ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
 
 RUN set -e -x && \
   build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release wget" && \
@@ -40,9 +39,9 @@ ENV OPENSSL_VERSION=openssl-$OPENSSL_VERSION \
     OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
     # Tomas Mraz
     OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C \
-    CFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CXXFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-$CLANG_VERSION \
     CXX=clang++-$CLANG_VERSION
@@ -81,9 +80,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG FLTO
 ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer"
-ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
+ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
 
 # Build unbound from source
 ENV NAME=unbound \
@@ -92,9 +90,9 @@ ENV NAME=unbound \
     UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-$UNBOUND_VERSION.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CXXFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-$CLANG_VERSION \
     CXX=clang++-$CLANG_VERSION
