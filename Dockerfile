@@ -1,5 +1,5 @@
 # Stage 1: Prepare builder image
-FROM debian:trixie AS builder
+FROM public.ecr.aws/docker/library/debian:trixie AS builder
 
 ARG CLANG_VERSION
 ARG OPENSSL_VERSION
@@ -153,7 +153,7 @@ RUN apt-get install -y --no-install-recommends \
           /opt/unbound/sbin/unbound-host
 
 # Stage 3: Final image
-FROM debian:trixie-slim
+FROM public.ecr.aws/docker/library/debian:trixie-slim
 ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."

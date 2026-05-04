@@ -100,7 +100,7 @@ RUN set -x && \
           /opt/unbound/sbin/unbound-host
 
 # Stage 2: Final image
-FROM alpine:3.23
+FROM public.ecr.aws/docker/library/alpine:3.23
 
 ARG SLIM=false
 
