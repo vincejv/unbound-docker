@@ -1,5 +1,5 @@
 # Stage 1: Build unbound
-FROM debian:bookworm AS unbound
+FROM public.ecr.aws/docker/library/debian:bookworm AS unbound
 
 ARG UNBOUND_VERSION
 ARG UNBOUND_SHA256
