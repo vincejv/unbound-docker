@@ -63,11 +63,11 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
     arch="$(dpkg --print-architecture)" && \
     openssl_arch="linux-x86_64" && \
     if [ "$arch" = "i386" ]; then \
-      openssl_arch="linux-x86"; \
+      openssl_arch="linux-elf"; \
     elif [ "$arch" = "arm64" ]; then \
       openssl_arch="linux-aarch64"; \
     elif [ "$arch" = "armhf" ]; then \
-      openssl_arch="linux-armv7"; \
+      openssl_arch="linux-armv4"; \
     fi && \
     cd $OPENSSL_VERSION && \
     ./config \
