@@ -49,6 +49,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           build-args: |
+            CLANG_VERSION=${{ env.CLANG_VERSION }}
             OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
             OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
@@ -112,6 +113,7 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY_IMAGE }}:${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
           build-args: |
+            CLANG_VERSION=${{ env.CLANG_VERSION }}
             OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
             OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
