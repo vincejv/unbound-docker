@@ -13,7 +13,7 @@ ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer"
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
 
 RUN set -e -x && \
-  build_deps="build-essential ca-certificates curl dirmngr gcc-multilib gnupg libidn2-0-dev libssl-dev lsb-release wget" && \
+  build_deps="build-essential ca-certificates curl dirmngr gcc-multilib g++-multilib gnupg libidn2-0-dev libssl-dev lsb-release wget" && \
   DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
     $build_deps && \
   # download install clang and llvm
