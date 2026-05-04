@@ -63,11 +63,11 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
     arch="$(dpkg --print-architecture)" && \
     openssl_arch="linux-x86_64-clang" && \
     if [ "$arch" = "i386" ]; then \
-      openssl_arch="linux-x86"; \
+      openssl_arch="-m32 linux-x86"; \
     elif [ "$arch" = "arm64" ]; then \
       openssl_arch="linux-aarch64"; \
     elif [ "$arch" = "armhf" ] || [ "$arch" = "armel" ]; then \
-      openssl_arch="linux-armv4"; \
+      openssl_arch="-m32 linux-armv4"; \
     fi && \
     cd $OPENSSL_VERSION && \
     ./config \
@@ -133,6 +133,15 @@ RUN apt-get install -y --no-install-recommends \
     echo "${UNBOUND_SHA256} *unbound.tar.gz" | sha256sum -c - && \
     tar xzf unbound.tar.gz --strip-components=1 && \
     rm -f unbound.tar.gz && \
+    arch="$(dpkg --print-architecture)" && \
+    CFLAGS_EXTRA="" && \
+    LDFLAGS_EXTRA="" && \
+    if [ "$arch" = "i386" ] || [ "$arch" = "armhf" ] || [ "$arch" = "armel" ]; then \
+        CFLAGS_EXTRA="$CFLAGS_EXTRA -m32"; \
+        LDFLAGS_EXTRA="$LDFLAGS_EXTRA -m32"; \
+    fi && \
+    CFLAGS="$CFLAGS $CFLAGS_EXTRA -I/opt/openssl/include" \
+    LDFLAGS="$LDFLAGS $LDFLAGS_EXTRA -L/opt/openssl/lib" \
     ./configure \
         --prefix=/opt/unbound \
         --with-pthreads \
