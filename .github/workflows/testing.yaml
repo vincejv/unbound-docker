@@ -212,7 +212,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile.32' }}
+          file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile' }}
           platforms: ${{ matrix.platform }}
           build-args: |
             CLANG_VERSION=${{ env.CLANG_VERSION }}
