@@ -9,12 +9,15 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG FLTO
-ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer" 
-ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
+ARG CFLAGS_OPT="-O3 -pipe -fPIC -flto -fomit-frame-pointer" 
+ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -latomic"
 
 RUN set -e -x && \
+  arch="$(dpkg --print-architecture)" && \
   build_deps="build-essential ca-certificates curl dirmngr gnupg libidn2-0-dev libssl-dev lsb-release wget" && \
+  if [ "$arch" = "i386" ]; then \
+    build_deps="$build_deps gcc-multilib g++-multilib"; \
+  fi && \
   DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
     $build_deps && \
   # download install clang and llvm
@@ -40,9 +43,9 @@ ENV OPENSSL_VERSION=openssl-$OPENSSL_VERSION \
     OPGP_OPENSSL_4=B7C1C14360F353A36862E4D5231C84CDDCC69C45 \
     # Tomas Mraz
     OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C \
-    CFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CXXFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-$CLANG_VERSION \
     CXX=clang++-$CLANG_VERSION
@@ -57,13 +60,24 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
     # gpg --no-tty --keyserver keyserver.ubuntu.com --recv-keys "$OPGP_OPENSSL_1" "$OPGP_OPENSSL_2" "$OPGP_OPENSSL_3" "$OPGP_OPENSSL_4" "$OPGP_OPENSSL_5" && \
     # gpg --batch --verify openssl.tar.gz.asc openssl.tar.gz && \
     tar xzf openssl.tar.gz && \
+    arch="$(dpkg --print-architecture)" && \
+    openssl_arch="linux-x86_64-clang" && \
+    if [ "$arch" = "i386" ]; then \
+      openssl_arch="-m32 linux-x86"; \
+    elif [ "$arch" = "arm64" ]; then \
+      openssl_arch="linux-aarch64"; \
+    elif [ "$arch" = "armhf" ] || [ "$arch" = "armel" ]; then \
+      openssl_arch="-m32 linux-armv4"; \
+    fi && \
     cd $OPENSSL_VERSION && \
     ./config \
+      $openssl_arch \
       --prefix=/opt/openssl \
       --openssldir=/opt/openssl \
       no-weak-ssl-ciphers \
       no-ssl3 \
       no-shared \
+      no-tests \
       -DOPENSSL_NO_HEARTBEATS \
       -fstack-protector-strong && \
     make depend && \
@@ -81,9 +95,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG FLTO
-ARG CFLAGS_OPT="-O3 -pipe -fomit-frame-pointer"
-ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed"
+ARG CFLAGS_OPT="-O3 -pipe -fPIC -flto -fomit-frame-pointer"
+ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -lcrypto -ldl -pthread -latomic"
 
 # Build unbound from source
 ENV NAME=unbound \
@@ -92,9 +105,9 @@ ENV NAME=unbound \
     UNBOUND_DOWNLOAD_URL=https://nlnetlabs.nl/downloads/unbound/unbound-$UNBOUND_VERSION.tar.gz \
     ROOT_HINTS_URL=https://www.internic.net/domain/named.cache \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
-    CFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CXXFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT $FLTO ${MARCH:+-march=$MARCH}" \
+    CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
+    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-$CLANG_VERSION \
     CXX=clang++-$CLANG_VERSION

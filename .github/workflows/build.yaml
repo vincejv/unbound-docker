@@ -17,8 +17,13 @@ jobs:
       matrix:
         platform:
           - linux/arm64
-          - linux/arm/v6
           - linux/amd64
+          - linux/arm/v6
+          - linux/arm/v7
+          - linux/386
+        variant:
+          - slim
+          - full
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -44,17 +49,16 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: Dockerfile
+          file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile' }}
           platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           build-args: |
             CLANG_VERSION=${{ env.CLANG_VERSION }}
             OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
             OPENSSL_SHA256=${{ env.OPENSSL_SHA256 }}
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
             UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
-            FLTO=${{ !contains(matrix.platform, 'arm') && '-flto' || '' }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
         id: export
         run: |
@@ -65,7 +69,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v7
         with:
-          name: digests-full-${{ steps.export.outputs.digest }}
+          name: digests-${{ matrix.variant == 'slim' && 'slim' || 'full' }}-${{ steps.export.outputs.digest }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -119,129 +123,12 @@ jobs:
             UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
             UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
             MARCH=${{ matrix.march }}
-            FLTO=${{ !contains(matrix.platform, 'arm') && '-flto' || '' }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  build-slim:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        platform:
-          - linux/arm64
-          - linux/arm/v6
-          - linux/amd64
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            # set latest tag for default branch
-            type=raw,value=slim
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Load versions
-        run: cat versions.env >> $GITHUB_ENV
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: Dockerfile.slim
-          platforms: ${{ matrix.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          build-args: |
-            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
-            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
-      - name: Export digest
-        id: export
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
-      - name: Upload digest
-        uses: actions/upload-artifact@v7
-        with:
-          name: digests-slim-${{ steps.export.outputs.digest }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  build-32:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        platform:
-          - linux/arm/v7
-          - linux/386
-        variant:
-          - slim
-          - full
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            # set latest tag for default branch
-            type=raw,value=${{ matrix.variant == 'slim' && 'slim' || env.DOCKER_SUFFIX }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Load versions
-        run: cat versions.env >> $GITHUB_ENV
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: Dockerfile.32
-          platforms: ${{ matrix.platform }}
-          build-args: |
-            UNBOUND_VERSION=${{ env.UNBOUND_VERSION }}
-            UNBOUND_SHA256=${{ env.UNBOUND_SHA256 }}
-            SLIM=${{ matrix.variant == 'slim' && 'true' || 'false' }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
-        id: export
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
-      - name: Upload digest
-        uses: actions/upload-artifact@v7
-        with:
-          name: digests-${{ matrix.variant == 'slim' && 'slim' || 'full' }}-${{ steps.export.outputs.digest }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
 
   merge:
     runs-on: ubuntu-latest
     needs:
       - build
-      - build-32
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v7
@@ -281,8 +168,7 @@ jobs:
   merge-slim:
     runs-on: ubuntu-latest
     needs:
-      - build-slim
-      - build-32
+      - build
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v7
