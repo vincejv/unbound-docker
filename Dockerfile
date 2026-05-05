@@ -9,7 +9,7 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG CFLAGS_OPT="-O3 -pipe -fPIC -flto -fomit-frame-pointer" 
+ARG CFLAGS_OPT="-O3 -pipe -fPIC -fomit-frame-pointer" 
 ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -latomic"
 
 RUN set -e -x && \
