@@ -5,10 +5,21 @@ A fork of https://github.com/MatthewVance/unbound-docker, with customized featur
 * Compatible with recursive mode, use the sample config in `sample` folder
 * `remote-control` can be toggled on/off by mounting a custom config file on `/opt/unbound/etc/unbound/unbound.conf.d`
 * Still keeps the autoconfiguration of `rrset`, `msg-cache` and `slabs` from [MatthewVance's docker image](https://github.com/MatthewVance/unbound-docker)
-* Compatible with OpenWRT's cgroups, `/sys/fs/cgroup/memory.max`
+* Compatible with modern Docker cgroups, `/sys/fs/cgroup/memory.max`
+* Slim images: minimal footprint `-Os` and runs on alpine, focused on DNS recursion only
+* Full images: includes additional features such as Redis cachedb, DNSCrypt, and DNS-over-HTTPS, runs on Debian glibc
+* Built on latest LLVM toolchain and `lld` linker with `-flto` optimizations
+* Multi-architecture support: `armhf`, `armv7`, `arm64`, `i386`, and `x86_64`
+* Specialized builds with `-march` for `sandybridge` and `skylake`
 
 ## Supported tags and respective `Dockerfile` links
 - [`latest` (*Dockerfile*)](https://github.com/vincejv/unbound-docker/tree/main)
+- [`skylake` (*Dockerfile*)](https://github.com/vincejv/unbound-docker/tree/main)
+- [`sandybridge` (*Dockerfile*)](https://github.com/vincejv/unbound-docker/tree/main)
+- [`slim` (*Dockerfile*)](https://github.com/vincejv/unbound-docker/tree/main)
+- [`slim-skylake` (*Dockerfile*)](https://github.com/vincejv/unbound-docker/tree/main)
+- [`slim-sandybridge` (*Dockerfile*)](https://github.com/vincejv/unbound-docker/tree/main)
+- [`testing` (*Dockerfile*)](https://github.com/vincejv/unbound-docker/tree/testing)
 
 ## What is Unbound?
 
