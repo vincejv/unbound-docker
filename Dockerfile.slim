@@ -60,7 +60,7 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
 ARG CFLAGS_OPT="-Os -pipe -fPIC -flto -fomit-frame-pointer"
-ARG LDFLAGS_OPT="-Os -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
+ARG LDFLAGS_OPT="-Os -flto -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld"
 
 # Build unbound from source
 ENV NAME=unbound \
@@ -71,7 +71,6 @@ ENV NAME=unbound \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
     CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     CC=clang \
     CXX=clang++

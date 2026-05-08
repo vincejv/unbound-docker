@@ -9,8 +9,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG CFLAGS_OPT="-O3 -pipe -fPIC -flto -fomit-frame-pointer" 
-ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -latomic"
+ARG CFLAGS_OPT="-O2 -pipe -fPIC -flto -fomit-frame-pointer" 
+ARG LDFLAGS_OPT="-flto -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -latomic"
 
 RUN set -e -x && \
   arch="$(dpkg --print-architecture)" && \
@@ -45,7 +45,6 @@ ENV OPENSSL_VERSION=openssl-$OPENSSL_VERSION \
     OPGP_OPENSSL_5=A21FAB74B0088AA361152586B8EF1A6BA9DA2D5C \
     CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-$CLANG_VERSION \
     CXX=clang++-$CLANG_VERSION
@@ -63,23 +62,29 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
     arch="$(dpkg --print-architecture)" && \
     openssl_arch="linux-x86_64-clang" && \
     if [ "$arch" = "i386" ]; then \
-      openssl_arch="-m32 linux-x86"; \
+      openssl_arch="linux-x86"; \
     elif [ "$arch" = "arm64" ]; then \
       openssl_arch="linux-aarch64"; \
     elif [ "$arch" = "armhf" ] || [ "$arch" = "armel" ]; then \
-      openssl_arch="-m32 linux-armv4"; \
+      openssl_arch="linux-armv4"; \
     fi && \
     cd $OPENSSL_VERSION && \
+    CFLAGS="${CFLAGS} -O3 -fstack-protector-strong" \
+    CXXFLAGS="${CXXFLAGS} -O3 -fstack-protector-strong" \
+    LDFLAGS="${LDFLAGS} -Wl,-rpath,/opt/openssl/lib64" \
     ./config \
       $openssl_arch \
       --prefix=/opt/openssl \
       --openssldir=/opt/openssl \
       no-weak-ssl-ciphers \
+      no-tls-deprecated-ec \
+      no-ssl2 \
       no-ssl3 \
       no-shared \
       no-tests \
-      -DOPENSSL_NO_HEARTBEATS \
-      -fstack-protector-strong && \
+      enable-quic \
+      enable-ec_nistp_64_gcc_128 \
+      -DOPENSSL_NO_HEARTBEATS && \
     make depend && \
     nproc | xargs -I % make -j% && \
     make install_sw
@@ -95,8 +100,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 ARG MARCH=""
-ARG CFLAGS_OPT="-O3 -pipe -fPIC -flto -fomit-frame-pointer"
-ARG LDFLAGS_OPT="-O3 -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -lcrypto -ldl -pthread -latomic"
+ARG CFLAGS_OPT="-O2 -pipe -fPIC -flto -fomit-frame-pointer"
+ARG LDFLAGS_OPT="-flto -Wl,--strip-all -Wl,--as-needed -fuse-ld=lld -lcrypto -ldl -pthread -latomic"
 
 # Build unbound from source
 ENV NAME=unbound \
@@ -107,7 +112,6 @@ ENV NAME=unbound \
     ROOT_HINTS_MD5_URL=https://www.internic.net/domain/named.cache.md5 \
     CFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     CXXFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
-    CPPFLAGS="$CFLAGS_OPT ${MARCH:+-march=$MARCH}" \
     LDFLAGS="$LDFLAGS_OPT" \
     CC=clang-$CLANG_VERSION \
     CXX=clang++-$CLANG_VERSION
