@@ -61,12 +61,15 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
     tar xzf openssl.tar.gz && \
     arch="$(dpkg --print-architecture)" && \
     openssl_arch="linux-x86_64-clang" && \
+    openssl_opts="enable-ec_nistp_64_gcc_128" && \
     if [ "$arch" = "i386" ]; then \
       openssl_arch="linux-x86"; \
+      openssl_opts=""; \
     elif [ "$arch" = "arm64" ]; then \
       openssl_arch="linux-aarch64"; \
     elif [ "$arch" = "armhf" ] || [ "$arch" = "armel" ]; then \
       openssl_arch="linux-armv4"; \
+      openssl_opts=""; \
     fi && \
     cd $OPENSSL_VERSION && \
     CFLAGS="${CFLAGS} -O3 -fstack-protector-strong" \
@@ -83,7 +86,7 @@ RUN curl -L $SOURCE_OPENSSL/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz -o openssl.
       no-shared \
       no-tests \
       enable-quic \
-      enable-ec_nistp_64_gcc_128 \
+      $openssl_opts \
       -DOPENSSL_NO_HEARTBEATS && \
     make depend && \
     nproc | xargs -I % make -j% && \
@@ -153,7 +156,7 @@ RUN apt-get install -y --no-install-recommends \
         --with-libhiredis \
         --disable-shared \
         --disable-static \
-	    --disable-rpath \
+	      --disable-rpath \
         --enable-subnet && \
     make -j$(($(nproc --all)+1)) && \
     make install && \
