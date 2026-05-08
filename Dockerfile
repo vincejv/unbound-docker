@@ -159,6 +159,9 @@ RUN apt-get install -y --no-install-recommends \
     ROOT_HINTS_MD5_HASHVAL=$(curl -sSL $ROOT_HINTS_MD5_URL) && \
     echo "${ROOT_HINTS_MD5_HASHVAL} *root.hints" | md5sum -c - && \
     mv root.hints /opt/unbound/etc/unbound/root.hints && \
+    rm -rf /opt/unbound/include && \
+    rm -rf /opt/unbound/lib && \
+    rm -rf /opt/openssl && \
     strip /opt/unbound/sbin/unbound \
           /opt/unbound/sbin/unbound-anchor \
           /opt/unbound/sbin/unbound-checkconf \
@@ -171,10 +174,7 @@ ENV NAME=unbound \
     SUMMARY="${NAME} is a validating, recursive, and caching DNS resolver." \
     DESCRIPTION="${NAME} is a validating, recursive, and caching DNS resolver."
 
-# COPY --from=builder /usr/lib/libsodium.so.* /usr/lib/libevent-2.1.so.* /usr/lib/libexpat.so.* /usr/lib/libprotobuf-c.so.* /usr/lib/libnghttp2.so.* /usr/lib/libhiredis.so.* /usr/lib/
-# COPY --from=builder /etc/ssl/ /etc/ssl/
 COPY --from=builder /etc/passwd /etc/group /etc/
-
 COPY --from=unbound /opt /opt
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -190,10 +190,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Clean image
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
-    rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
-    rm -rf /opt/unbound/include && \
-    rm -rf /opt/unbound/lib && \
-    rm -rf /opt/openssl
+    rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 COPY data/ /
 RUN chmod +x /unbound.sh
