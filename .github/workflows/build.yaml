@@ -154,6 +154,8 @@ jobs:
     needs:
       - build
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
       - name: Load versions
         run: cat versions.env >> $GITHUB_ENV
       - name: Retrieve commit
@@ -209,6 +211,8 @@ jobs:
     needs:
       - build
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
       - name: Load versions
         run: cat versions.env >> $GITHUB_ENV
       - name: Retrieve commit
