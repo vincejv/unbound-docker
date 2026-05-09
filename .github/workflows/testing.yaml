@@ -183,7 +183,7 @@ jobs:
             ${{ env.REGISTRY_IMAGE }}
             ghcr.io/${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-${{ steps.export.outputs.digest }}
+            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-${{ steps.commit.outputs.short }}
             type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}
             type=raw,value=${{ env.DOCKER_SUFFIX }}
       - name: Login to Docker Hub
@@ -240,7 +240,7 @@ jobs:
             ${{ env.REGISTRY_IMAGE }}
             ghcr.io/${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-slim-${{ steps.export.outputs.digest }}
+            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-slim-${{ steps.commit.outputs.short }}
             type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-slim
             type=raw,value=${{ env.DOCKER_SUFFIX }}-slim
       - name: Login to Docker Hub
