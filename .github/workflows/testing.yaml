@@ -27,22 +27,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Load versions
-        run: cat versions.env >> $GITHUB_ENV
-      - name: Retrieve commit
-        id: commit
-        uses: prompt/actions-commit-hash@v4
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ${{ env.REGISTRY_IMAGE }}
-            ghcr.io/${{ env.REGISTRY_IMAGE }}
+          images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}-${{ steps.commit.outputs.short }}
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}
-            type=raw,value=${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}
+            # set latest tag for default branch
+            type=raw,value=${{ env.DOCKER_SUFFIX }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
@@ -50,12 +42,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v7
@@ -102,21 +90,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Load versions
-        run: cat versions.env >> $GITHUB_ENV
-      - name: Retrieve commit
-        id: commit
-        uses: prompt/actions-commit-hash@v4
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ${{ env.REGISTRY_IMAGE }}
-            ghcr.io/${{ env.REGISTRY_IMAGE }}
+          images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}-${{ steps.commit.outputs.short }}
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
+            # set latest tag for default branch
             type=raw,value=${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -125,12 +105,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Load versions
+        run: cat versions.env >> $GITHUB_ENV
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v7
@@ -139,7 +115,7 @@ jobs:
           file: ${{ matrix.variant == 'slim' && 'Dockerfile.slim' || 'Dockerfile' }}
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ env.DOCKER_SUFFIX }}${{ matrix.variant == 'slim' && '-slim' || '' }}${{ matrix.march && format('-{0}', matrix.march) || '' }}
           build-args: |
             CLANG_VERSION=${{ env.CLANG_VERSION }}
             OPENSSL_VERSION=${{ env.OPENSSL_VERSION }}
@@ -154,11 +130,6 @@ jobs:
     needs:
       - build
     steps:
-      - name: Load versions
-        run: cat versions.env >> $GITHUB_ENV
-      - name: Retrieve commit
-        id: commit
-        uses: prompt/actions-commit-hash@v4
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v7
         with:
@@ -177,24 +148,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ${{ env.REGISTRY_IMAGE }}
-            ghcr.io/${{ env.REGISTRY_IMAGE }}
+          images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-${{ steps.export.outputs.digest }}
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}
             type=raw,value=${{ env.DOCKER_SUFFIX }}
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
@@ -209,11 +170,6 @@ jobs:
     needs:
       - build
     steps:
-      - name: Load versions
-        run: cat versions.env >> $GITHUB_ENV
-      - name: Retrieve commit
-        id: commit
-        uses: prompt/actions-commit-hash@v4
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v7
         with:
@@ -232,24 +188,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ${{ env.REGISTRY_IMAGE }}
-            ghcr.io/${{ env.REGISTRY_IMAGE }}
+          images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-slim-${{ steps.export.outputs.digest }}
-            type=raw,value=${{ env.UNBOUND_VERSION }}-${{ env.DOCKER_SUFFIX }}-slim
             type=raw,value=${{ env.DOCKER_SUFFIX }}-slim
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
